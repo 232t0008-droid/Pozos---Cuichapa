@@ -1521,17 +1521,13 @@ function enviarTodo(){
   var resumen='📋 Reporte listo para C-'+W+'\n👷 Recorredor: '+REC+'\n📅 '+now();
   if(!confirm(resumen+'\n\n¿Confirmas el envío a WhatsApp?')) return;
 
-  // Registrar visita y abrir WhatsApp
+  // Registrar visita
   agregarVisita(REC,W); mostrarContador(REC);
   var n=getVisitas(REC).length;
   showToast('✅ C-'+W+' registrado · '+REC+': '+n+(n===1?' pozo':' pozos'));
-  var waURL='https://wa.me/522293735876?text='+encodeURIComponent(msg);
-  // window.open funciona en laptop y celular
-  var win=window.open(waURL,'_blank');
-  // Fallback por si el navegador bloquea la ventana emergente
-  if(!win || win.closed || typeof win.closed==='undefined'){
-    location.href=waURL;
-  }
+  var waURL='https://api.whatsapp.com/send?phone=522293735876&text='+encodeURIComponent(msg);
+  // Redirige directamente — funciona en celular y laptop
+  setTimeout(function(){ location.href=waURL; }, 600);
 }
 
 // ══ COORDENADAS DE POZOS (del archivo KMZ) ══
