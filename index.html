@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Pozos Campo Cuichapa</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f3460">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cuichapa">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* ══ BASE VARS ══ */
+:root{
+  --bg:#eef2f8;--surface:#fff;--surface2:#e8edf8;--border:#d4ddef;
+  --txt:#0d1828;--txt2:#5a6e90;--accent:#0f3460;--accent2:#1e5caa;
+  --green:#16a34a;--red:#dc2626;--send:#16a34a;
+  --bar:#d4ddef;--prog:linear-gradient(90deg,#16a34a,#4ade80);
+  --shadow:0 2px 12px rgba(15,52,96,.09);--shadowlg:0 8px 32px rgba(15,52,96,.14);
+  --fixed:#0d1828;--char-bg:#0f3460;
+  --hdr:linear-gradient(135deg,#0f3460 0%,#1a4d8a 100%);
+}
+/* NIGHT */
+body.night{
+  --bg:#060a12;--surface:#0d1525;--surface2:#080f1e;--border:#162035;
+  --txt:#ccd8f0;--txt2:#5a7098;--accent:#4090e0;--accent2:#60b0f8;
+  --green:#22c55e;--red:#f87171;--bar:#162035;
+  --shadow:0 2px 10px rgba(0,0,0,.5);--shadowlg:0 8px 32px rgba(0,0,0,.6);
+  --fixed:#060a12;--char-bg:#0d1a30;
+}
+/* MANRIQUE — offshore azul */
+body.m-active{
+  --char-bg:linear-gradient(135deg,#0a1e3a 0%,#0e2d5a 60%,#0a2448 100%);
+  --hdr:linear-gradient(135deg,#0a1e3a 0%,#0d2a5a 60%,#102050 100%);
+}
+/* CIRILO — refinería gris industrial */
+body.c-active{
+  --char-bg:linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 60%,#1e1e1e 100%);
+  --hdr:linear-gradient(135deg,#1a1a20 0%,#28282e 60%,#1e1e24 100%);
+}
+/* JUAN CARLOS — campo atardecer */
+body.jc-active{
+  --char-bg:linear-gradient(135deg,#3a1a00 0%,#5a2a00 60%,#2e1400 100%);
+  --hdr:linear-gradient(160deg,#2a1000 0%,#4a1e00 50%,#3a1800 100%);
+}
+
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);
+  min-height:100vh;padding:14px 14px 96px 70px;transition:background .5s,color .5s;
+}
+
+/* ══ SIDEBAR ══ */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:54px;
+  background:#080f1e;
+  display:flex;flex-direction:column;align-items:center;
+  padding:16px 0;gap:6px;z-index:400;
+  border-right:1px solid #1a2a42;
+  box-shadow:2px 0 16px rgba(0,0,0,.4);
+}
+body.night .sidebar{background:#050810;border-right-color:#0f1a28}
+
+.sidebar-logo{
+  width:36px;height:36px;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.sidebar-divider{width:30px;height:1px;background:#1a2a42;margin:4px 0}
+
+.sidebar-icon{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;position:relative;
+  border:1.5px solid transparent;
+}
+.sidebar-icon:hover{background:#1a2a42;border-color:#2a3a52}
+.sidebar-icon.active{
+  background:#0f3460;border-color:#1e5caa;
+  box-shadow:0 0 12px rgba(30,92,170,.4);
+}
+
+/* Tooltip */
+.sidebar-icon::after{
+  content:attr(data-tip);
+  position:absolute;left:56px;top:50%;transform:translateY(-50%);
+  background:#1a2a42;color:#e8f0fe;font-size:12px;font-weight:600;
+  padding:6px 10px;border-radius:8px;white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .2s;
+  border:1px solid #2a3a52;
+}
+.sidebar-icon:hover::after{opacity:1}
+
+.toggle-btn{
+  position:fixed;top:12px;right:12px;z-index:500;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:20px;padding:7px 14px;font-size:13px;font-weight:700;
+  cursor:pointer;color:var(--txt);box-shadow:var(--shadow);transition:all .3s;
+}
+
+.wrap{max-width:420px;margin:0 auto;position:relative;z-index:2}
+
+/* ══ VIEWS ══ */
+.view{display:none}.view.active{display:block}
+
+/* ══ LOGIN MODAL ══ */
+.login-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:900;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.login-overlay.open{display:flex}
+.login-box{
+  background:var(--surface);border-radius:20px;padding:28px 24px;
+  width:320px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.5);
+  border:1.5px solid var(--border);animation:popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.login-icon{font-size:40px;text-align:center;margin-bottom:12px}
+.login-title{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);text-align:center;letter-spacing:1px;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--txt2);text-align:center;margin-bottom:20px}
+.login-field{margin-bottom:14px}
+.login-field label{display:block;font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.login-field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;color:var(--txt);background:var(--surface2);outline:none;font-family:'Inter',sans-serif;transition:all .2s}
+.login-field input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(30,106,191,.12)}
+.login-err{font-size:12px;color:var(--red);text-align:center;margin-bottom:10px;display:none}
+.login-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;margin-bottom:10px}
+.login-btn:hover{transform:translateY(-1px);opacity:.9}
+.login-cancel{width:100%;padding:10px;background:none;border:none;color:var(--txt2);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+
+/* ══ MAPA VIEW ══ */
+.map-search-bar{
+  background:var(--surface);border-radius:14px;padding:16px;
+  margin-bottom:14px;border:1.5px solid var(--border);box-shadow:var(--shadow);
+}
+.map-input-wrap{display:flex;gap:8px;margin-top:10px}
+.map-input{
+  flex:1;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:16px;color:var(--txt);background:var(--surface2);
+  outline:none;font-family:'Inter',sans-serif;transition:all .2s;
+}
+.map-input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(30,106,191,.12)}
+.map-search-btn{
+  padding:12px 16px;background:var(--accent);color:#fff;
+  border:none;border-radius:10px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;
+}
+
+.map-result{
+  background:var(--surface);border-radius:14px;padding:16px;
+  margin-bottom:14px;border:1.5px solid var(--border);
+  box-shadow:var(--shadow);display:none;animation:fadeUp .3s ease;
+}
+.map-result.show{display:block}
+.map-well-title{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);letter-spacing:1px;margin-bottom:12px}
+.coord-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.coord-row:last-of-type{border-bottom:none}
+.coord-icon{font-size:20px;flex-shrink:0}
+.coord-label{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px;display:block}
+.coord-val{font-family:'Courier New',monospace;font-size:16px;color:var(--txt);font-weight:700;margin-top:2px;display:block}
+
+.map-open-btn{
+  width:100%;padding:14px;background:#16a34a;color:#fff;
+  border:none;border-radius:11px;font-size:15px;font-weight:800;
+  cursor:pointer;font-family:'Inter',sans-serif;margin-top:12px;
+  box-shadow:0 4px 14px rgba(22,163,74,.3);transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.map-open-btn:hover{transform:translateY(-1px)}
+
+.map-well-list{
+  background:var(--surface);border-radius:14px;padding:14px 16px;
+  border:1.5px solid var(--border);box-shadow:var(--shadow);
+}
+.map-well-list-title{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.map-well-chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  padding:6px 12px;background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:20px;font-size:12px;font-weight:700;color:var(--accent);
+  cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;
+}
+.chip:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chip.no-coord{color:var(--txt2);cursor:default}
+.chip.no-coord:hover{background:var(--surface2);color:var(--txt2);border-color:var(--border)}
+
+/* ══ INSTALL BANNER ══ */
+.install-banner{
+  display:none;background:linear-gradient(135deg,#0f3460,#1a5caa);
+  border-radius:14px;padding:14px 16px;margin-bottom:14px;
+  box-shadow:0 4px 20px rgba(15,52,96,.3);align-items:center;gap:12px;
+}
+.install-banner.show{display:flex}
+.install-banner-txt{flex:1;color:#fff}
+.install-banner-txt strong{font-size:14px;font-weight:800;display:block}
+.install-banner-txt span{font-size:11px;color:rgba(255,255,255,.7)}
+.install-btn{padding:9px 16px;background:#FF7A00;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif}
+.install-close{background:none;border:none;color:rgba(255,255,255,.6);font-size:20px;cursor:pointer;padding:0 4px;flex-shrink:0}
+
+/* ══ WELL PICKER ══ */
+.well-picker{background:var(--surface);border-radius:16px;padding:18px;margin-bottom:14px;border:2px solid var(--accent2);box-shadow:0 4px 20px rgba(15,52,96,.15);display:none}
+.well-picker.show{display:block}
+.well-picker-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);letter-spacing:1px;margin-bottom:4px}
+.well-picker-sub{font-size:12px;color:var(--txt2);margin-bottom:14px}
+.well-picker-row{display:flex;gap:8px}
+.well-picker-input{flex:1;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:18px;font-weight:700;color:var(--accent);background:var(--surface2);outline:none;font-family:'Inter',sans-serif;transition:all .2s}
+.well-picker-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(15,52,96,.12)}
+.well-picker-btn{padding:12px 18px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif}
+.well-picker-suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.wp-chip{padding:5px 10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:16px;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.wp-chip:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ══ LEAFLET MAP ══ */
+#mapContainer{
+  width:100%;height:420px;border-radius:14px;
+  overflow:hidden;border:1.5px solid var(--border);
+  box-shadow:var(--shadow);margin-bottom:14px;
+  background:#e8f4f8;
+}
+.leaflet-popup-content-wrapper{
+  border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.2);
+  border:none;font-family:'Inter',sans-serif;
+}
+.leaflet-popup-content{margin:12px 16px;font-size:13px}
+.popup-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#0f3460;letter-spacing:1px}
+.popup-coord{font-family:'Courier New',monospace;font-size:11px;color:#5a6e90;margin-top:2px}
+.popup-maps{
+  display:block;margin-top:8px;padding:7px 12px;
+  background:#16a34a;color:#fff;border-radius:8px;
+  text-decoration:none;font-size:12px;font-weight:700;text-align:center;
+}
+.map-info-card{
+  background:var(--surface);border-radius:14px;padding:14px 16px;
+  margin-bottom:14px;border:1.5px solid var(--border);
+  box-shadow:var(--shadow);display:none;animation:fadeUp .3s ease;
+}
+.map-info-card.show{display:block}
+
+
+.cat-header{
+  background:var(--hdr);border-radius:18px;padding:18px;
+  margin-bottom:14px;box-shadow:var(--shadowlg);
+}
+.cat-header h2{font-family:'Bebas Neue',sans-serif;font-size:36px;color:#fff;letter-spacing:2px}
+.cat-header p{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+
+.well-search{
+  width:100%;padding:11px 14px;border:1.5px solid var(--border);
+  border-radius:12px;font-size:15px;background:var(--surface);
+  color:var(--txt);outline:none;margin-bottom:12px;
+  font-family:'Inter',sans-serif;transition:all .25s;
+}
+.well-search:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(30,106,191,.12)}
+
+.well-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.well-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;background:var(--surface);
+  border-radius:14px;border:1.5px solid var(--border);
+  cursor:pointer;transition:all .2s;box-shadow:var(--shadow);
+}
+.well-item:hover{border-color:var(--accent2);transform:translateX(3px)}
+.well-item.selected{border-color:var(--accent);background:var(--surface2);box-shadow:0 4px 14px rgba(15,52,96,.18)}
+.well-num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);letter-spacing:1px}
+.well-status-dot{width:10px;height:10px;border-radius:50%}
+
+.enter-btn{
+  width:100%;padding:16px;background:var(--accent);color:#fff;
+  border:none;border-radius:13px;font-size:16px;font-weight:800;
+  cursor:pointer;font-family:'Inter',sans-serif;
+  box-shadow:0 4px 16px rgba(15,52,96,.25);
+  transition:all .2s;display:none;margin-bottom:14px;
+  animation:fadeUp .3s ease;
+}
+.enter-btn:hover{transform:translateY(-1px)}
+
+/* ══ POZO DETALLE ══ */
+.pozo-back{
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  color:var(--accent2);font-size:14px;font-weight:700;
+  margin-bottom:14px;padding:8px 0;
+}
+.pozo-back:hover{color:var(--accent)}
+
+.pozo-header{
+  background:var(--hdr);border-radius:18px;padding:18px;
+  margin-bottom:14px;box-shadow:var(--shadowlg);
+  display:flex;align-items:center;gap:14px;
+}
+.pozo-icon-big{
+  width:56px;height:56px;border-radius:14px;
+  background:rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.pozo-header-txt h2{font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff;letter-spacing:1px;line-height:1}
+.pozo-header-txt p{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+
+.info-section{background:var(--surface);border-radius:16px;padding:16px;margin-bottom:12px;border:1.5px solid var(--border);box-shadow:var(--shadow)}
+.info-section-title{
+  font-size:11px;font-weight:800;color:var(--accent2);
+  text-transform:uppercase;letter-spacing:1.2px;
+  margin-bottom:12px;padding-bottom:8px;border-bottom:1.5px solid var(--border);
+  display:flex;align-items:center;gap:6px;
+}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:13px;color:var(--txt2);font-weight:600}
+.info-value{font-size:13px;color:var(--txt);font-weight:700;text-align:right}
+.info-value.empty{color:var(--border);font-style:italic;font-weight:400}
+.info-edit-btn{
+  width:100%;padding:12px;background:var(--surface2);color:var(--accent);
+  border:1.5px dashed var(--accent2);border-radius:10px;font-size:13px;
+  font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;
+  margin-top:8px;transition:all .2s;
+}
+.info-edit-btn:hover{background:var(--accent);color:#fff;border-style:solid}
+
+/* Badge tags */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.tag-green{background:#dcfce7;color:#15803d}
+.tag-red{background:#fee2e2;color:#b91c1c}
+.tag-blue{background:#dbeafe;color:#1d4ed8}
+.tag-gray{background:var(--surface2);color:var(--txt2)}
+body.night .tag-green{background:#14532d44;color:#4ade80}
+body.night .tag-red{background:#7f1d1d44;color:#f87171}
+body.night .tag-blue{background:#1e3a5f44;color:#60a5fa}
+
+
+/* ══ HEADER ══ */
+.header{
+  border-radius:18px;padding:0;margin-bottom:14px;
+  background:var(--hdr);box-shadow:var(--shadowlg);
+  position:relative;overflow:hidden;transition:all .6s;
+}
+.header-row{display:flex;align-items:flex-end;min-height:110px}
+.header-text{flex:1;padding:16px 0 16px 16px}
+.header-text h1{
+  font-family:'Bebas Neue',sans-serif;font-size:44px;color:#fff;
+  line-height:1;letter-spacing:2px;
+}
+.header-text p{font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;font-weight:600;letter-spacing:.4px;transition:all .5s}
+
+/* Character slot in header */
+.char-slot{
+  width:115px;flex-shrink:0;align-self:flex-end;
+  position:relative;overflow:hidden;
+}
+/* Each character hidden by default */
+.char-m,.char-c,.char-jc{
+  position:absolute;bottom:0;right:0;width:115px;
+  opacity:0;transform:translateX(20px) scale(.85);
+  transition:opacity .6s cubic-bezier(.34,1.4,.64,1),transform .6s cubic-bezier(.34,1.4,.64,1);
+  pointer-events:none;
+}
+body.m-active .char-m{opacity:1;transform:translateX(0) scale(1);position:relative}
+body.c-active .char-c{opacity:1;transform:translateX(0) scale(1);position:relative}
+body.jc-active .char-jc{opacity:1;transform:translateX(0) scale(1);position:relative}
+
+/* Glow effect per character */
+body.m-active .header::after{content:'';position:absolute;bottom:0;right:0;width:140px;height:100%;background:radial-gradient(ellipse at 80% 100%,rgba(30,120,255,.2) 0%,transparent 70%);pointer-events:none}
+body.c-active .header::after{content:'';position:absolute;bottom:0;right:0;width:140px;height:100%;background:radial-gradient(ellipse at 80% 100%,rgba(180,180,180,.12) 0%,transparent 70%);pointer-events:none}
+body.jc-active .header::after{content:'';position:absolute;bottom:0;right:0;width:140px;height:100%;background:radial-gradient(ellipse at 80% 100%,rgba(255,120,0,.2) 0%,transparent 70%);pointer-events:none}
+
+/* ══ BANNER per character ══ */
+.char-banner{
+  display:none;border-radius:12px;padding:12px 16px;
+  margin-bottom:14px;animation:bannerIn .4s cubic-bezier(.34,1.3,.64,1);
+}
+@keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.banner-inner{display:flex;align-items:center;gap:12px}
+.banner-icon{font-size:28px;flex-shrink:0}
+.banner-txt strong{font-size:14px;color:#fff;font-weight:800;display:block}
+.banner-txt span{font-size:11px;color:rgba(255,255,255,.65);letter-spacing:.5px}
+
+body.m-active .banner-m{display:block;background:linear-gradient(135deg,#0e2a5a,#1a3d7a);border:1px solid #2a4d8a}
+body.c-active .banner-c{display:block;background:linear-gradient(135deg,#1e1e24,#2e2e38);border:1px solid #404050}
+body.jc-active .banner-jc{display:block;background:linear-gradient(135deg,#3a1a00,#582800);border:1px solid #7a3a00}
+
+/* ══ GPS ══ */
+.gps-bar{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:10px;padding:10px 14px;margin-bottom:6px;
+  font-size:13px;color:var(--txt2);box-shadow:var(--shadow);transition:all .4s;
+}
+.gps-bar.ok{color:var(--green);border-color:rgba(34,197,94,.3)}
+.gps-bar.err{color:var(--red)}
+.gps-coords{font-family:'Courier New',monospace;font-size:11px;color:var(--accent2);margin-bottom:14px;padding:0 4px;display:none}
+
+/* ══ CARD ══ */
+.card{background:var(--surface);border-radius:16px;padding:14px 16px;margin-bottom:14px;border:1.5px solid var(--border);box-shadow:var(--shadow);transition:all .4s}
+
+/* ══ RECORREDOR ══ */
+.rec-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.rec-btn{
+  flex:1;min-width:110px;padding:12px 10px;
+  border:1.5px solid var(--border);border-radius:12px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  background:var(--surface2);color:var(--txt2);
+  transition:all .25s;text-align:center;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  font-family:'Inter',sans-serif;
+}
+.rec-btn.sel{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.dot-green{background:#22c55e;box-shadow:0 0 6px #22c55e}
+.dot-yellow{background:#f59e0b;box-shadow:0 0 6px #f59e0b}
+
+/* ══ COUNTER ══ */
+.cnt-panel{display:none;margin-top:12px;background:var(--surface2);border-radius:12px;padding:14px;border:1.5px solid var(--border);animation:fadeUp .35s ease}
+.cnt-panel.show{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.cnt-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cnt-name{font-size:14px;font-weight:800;color:var(--accent);display:block}
+.cnt-status{font-size:12px;color:var(--txt2)}
+.cnt-big{font-family:'Bebas Neue',sans-serif;font-size:54px;color:var(--accent);line-height:1}
+.cnt-sub{font-size:11px;color:var(--txt2);text-align:right}
+.pbar{height:6px;background:var(--bar);border-radius:99px;overflow:hidden;margin-top:8px}
+.pfill{height:100%;background:var(--prog);border-radius:99px;transition:width .7s cubic-bezier(.34,1,.64,1)}
+
+/* ══ TABS ══ */
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tab{flex:1;padding:11px 6px;border:1.5px solid var(--border);border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;background:var(--surface2);color:var(--txt2);transition:all .2s;font-family:'Inter',sans-serif}
+.tab:hover{border-color:var(--accent);color:var(--accent)}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 14px rgba(0,0,0,.2)}
+
+/* ══ PANELS ══ */
+.panel{display:none;background:var(--surface);border-radius:16px;padding:18px;margin-bottom:14px;border:1.5px solid var(--border);box-shadow:var(--shadow);transition:all .4s}
+.panel.active{display:block}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.5px;color:var(--accent);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--border)}
+
+/* ══ FIELDS ══ */
+.field{margin-bottom:15px}
+.lbl{display:block;font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px}
+.req{color:var(--red)}
+input[type=number],textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;color:var(--txt);font-family:'Inter',sans-serif;background:var(--surface2);outline:none;transition:all .25s}
+input:focus,textarea:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(30,106,191,.12);background:var(--surface)}
+textarea{resize:none;height:70px}
+.num-row{display:flex;gap:10px}.num-row .field{flex:1}
+
+.btn-group{display:flex;gap:7px;margin-top:6px;flex-wrap:wrap}
+.opt-btn{flex:1;min-width:70px;padding:11px 6px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:var(--surface2);color:var(--txt2);transition:all .2s;font-family:'Inter',sans-serif}
+.opt-btn.sel-a{border-color:var(--accent);background:var(--accent);color:#fff}
+.opt-btn.sel-b{border-color:var(--accent2);background:var(--accent2);color:#fff}
+.opt-btn.sel-c{border-color:var(--accent);background:var(--surface);color:var(--accent);font-weight:800}
+
+.cond{display:none}.cond.show{display:block}
+
+.chk-row{display:flex;align-items:center;gap:12px;padding:13px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:9px;background:var(--surface2);transition:all .2s}
+.chk-row:hover{border-color:var(--accent2)}
+.chk-row.on{border-color:var(--green);background:#f0fdf4}
+body.night .chk-row.on{background:#052e1640}
+.chk-box{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--surface);transition:all .2s}
+.chk-row.on .chk-box{background:var(--green);border-color:var(--green);color:#fff}
+.chk-lbl{font-size:14px;font-weight:700;color:var(--txt)}
+.chk-sub{font-size:11px;color:var(--txt2);margin-top:2px}
+.aforo-extra{margin-top:10px;padding:12px;background:var(--surface2);border-radius:10px;border:1.5px dashed var(--accent2);display:none}
+.hora-box{background:var(--surface2);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--accent);font-weight:700;border:1.5px solid var(--border)}
+.maps-link{display:none;text-align:center;margin-top:10px;font-size:12px;color:var(--accent2);text-decoration:none;padding:9px;background:var(--surface);border-radius:10px;border:1.5px solid var(--border);font-weight:600}
+
+/* ══ VACACIONES MODAL ══ */
+.vac-btn{
+  display:flex;align-items:center;gap:6px;margin-top:10px;
+  padding:9px 14px;background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
+  color:var(--txt2);width:100%;justify-content:center;transition:all .2s;
+  font-family:'Inter',sans-serif;
+}
+.vac-btn:hover{border-color:var(--accent);color:var(--accent)}
+.vac-modal{
+  display:none;margin-top:10px;background:var(--surface2);
+  border-radius:12px;padding:14px;border:2px solid #f59e0b;
+  animation:fadeUp .3s ease;
+}
+.vac-modal.open{display:block}
+.vac-modal-title{font-size:12px;font-weight:800;color:#b45309;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.vac-rec-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.vac-rec-btn{flex:1;padding:8px 6px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:var(--surface);color:var(--txt2);transition:all .2s;font-family:'Inter',sans-serif}
+.vac-rec-btn.sel{background:#f59e0b;color:#fff;border-color:#f59e0b}
+.vac-fields{display:flex;gap:8px;margin-bottom:10px}
+.vac-fields .field{flex:1;margin-bottom:0}
+.vac-fields input{padding:9px 10px;font-size:14px}
+.vac-save{width:100%;padding:10px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.vac-save:hover{background:#d97706}
+.vac-status{margin-top:12px}
+.vac-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface);border-radius:8px;margin-bottom:6px;border:1.5px solid var(--border)}
+.vac-item-txt{font-size:12px;color:var(--txt);font-weight:600}
+.vac-item-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 4px}
+
+/* ══ FOTO EVIDENCIA ══ */
+.foto-card{background:var(--surface);border-radius:16px;padding:16px;margin-bottom:14px;border:1.5px solid var(--border);box-shadow:var(--shadow)}
+.foto-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:var(--accent);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.foto-upload-area{
+  border:2px dashed var(--border);border-radius:12px;
+  padding:20px;text-align:center;cursor:pointer;
+  transition:all .2s;background:var(--surface2);
+  position:relative;
+}
+.foto-upload-area:hover{border-color:var(--accent2);background:var(--surface)}
+.foto-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.foto-icon{font-size:36px;margin-bottom:8px;display:block}
+.foto-label{font-size:14px;font-weight:700;color:var(--txt2)}
+.foto-sub{font-size:11px;color:var(--txt2);margin-top:4px;opacity:.7}
+.foto-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.foto-thumb{
+  width:80px;height:80px;border-radius:10px;object-fit:cover;
+  border:2px solid var(--border);position:relative;display:inline-block;
+}
+.foto-thumb-wrap{position:relative;width:80px;height:80px}
+.foto-thumb-wrap img{width:80px;height:80px;border-radius:10px;object-fit:cover;border:2px solid var(--border)}
+.foto-del{
+  position:absolute;top:-6px;right:-6px;
+  background:#dc2626;color:#fff;border:none;border-radius:50%;
+  width:20px;height:20px;font-size:11px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-weight:900;
+}
+.foto-count{font-size:12px;color:var(--txt2);margin-top:8px;text-align:center}
+
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-90px);color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:700;z-index:600;transition:transform .45s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.3);background:#0f3460}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.send-fixed{position:fixed;bottom:0;left:0;right:0;padding:12px 14px 16px;background:var(--fixed);z-index:100;transition:background .4s}
+.send-wrap{max-width:420px;margin:0 auto}
+.send-btn{width:100%;padding:16px;background:var(--send);color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;box-shadow:0 4px 16px rgba(22,163,74,.3)}
+.send-btn:hover{transform:translateY(-1px)}.send-btn:active{transform:scale(.98)}
+</style>
+</head>
+<body>
+
+<button class="toggle-btn" id="modeBtn" onclick="toggleMode()">🌙 Noche</button>
+
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar">
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+      <circle cx="18" cy="18" r="17" fill="#0f3460" stroke="#1e5caa" stroke-width="1.5"/>
+      <path d="M18 8 Q22 14 20 20 Q24 18 22 24 Q18 30 18 30 Q18 30 14 24 Q12 18 16 20 Q14 14 18 8Z" fill="#FF7A00"/>
+      <ellipse cx="18" cy="28" rx="5" ry="2" fill="#FF7A00" opacity=".5"/>
+    </svg>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <!-- Icono 1: Registro de visitas (casco) -->
+  <div class="sidebar-icon active" id="icon-visitas" data-tip="Registro de Visitas" onclick="switchView('visitas')">
+    <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
+      <!-- Casco petrolero -->
+      <path d="M4 16 Q4 8 14 6 Q24 8 24 16 Q22 13 14 12 Q6 13 4 16Z" fill="#e8e4d8" stroke="#fff" stroke-width="1.2"/>
+      <path d="M6 15 Q8 10 14 9 Q20 10 22 15 Q18 12 14 12 Q10 12 6 15Z" fill="#f5f0ea"/>
+      <rect x="3" y="15" width="22" height="4" rx="2" fill="#d0ccc0" stroke="#fff" stroke-width="1"/>
+      <path d="M12 8 Q14 3 16 8 Q17 11 14 12 Q11 11 12 8Z" fill="#FF7A00" stroke="#e06000" stroke-width=".8"/>
+      <!-- Cuerpo persona -->
+      <rect x="10" y="20" width="8" height="7" rx="2" fill="#FF7A00"/>
+      <rect x="7" y="22" width="5" height="5" rx="2" fill="#FF7A00"/>
+      <rect x="16" y="22" width="5" height="5" rx="2" fill="#FF7A00"/>
+    </svg>
+  </div>
+
+  <!-- Icono 2: Catálogo de pozos (protegido) -->
+  <div class="sidebar-icon" id="icon-catalogo" data-tip="Información de Pozos 🔒" onclick="requireLogin('catalogo')">
+    <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
+      <polygon points="14,2 4,26 24,26" fill="none" stroke="#7ec8e3" stroke-width="1.8"/>
+      <line x1="4" y1="26" x2="24" y2="26" stroke="#7ec8e3" stroke-width="2.5"/>
+      <line x1="7" y1="20" x2="21" y2="20" stroke="#5a9ab8" stroke-width="1.2"/>
+      <line x1="9" y1="15" x2="19" y2="15" stroke="#5a9ab8" stroke-width="1.2"/>
+      <line x1="11" y1="10" x2="17" y2="10" stroke="#5a9ab8" stroke-width="1.2"/>
+      <circle cx="14" cy="3" r="1.8" fill="#FF7A00">
+        <animate attributeName="opacity" values=".4;1;.4" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <rect x="10" y="24" width="8" height="2" rx="1" fill="#FF7A00"/>
+    </svg>
+  </div>
+
+  <!-- Icono 3: Ubicación de pozos (protegido) -->
+  <div class="sidebar-icon" id="icon-mapa" data-tip="Ubicación de Pozos 🔒" onclick="requireLogin('mapa')">
+    <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
+      <!-- Pin de ubicación -->
+      <path d="M14 3 Q20 3 20 10 Q20 16 14 24 Q8 16 8 10 Q8 3 14 3Z" fill="none" stroke="#4ade80" stroke-width="2"/>
+      <circle cx="14" cy="10" r="3.5" fill="#4ade80"/>
+      <!-- Ondas de señal -->
+      <path d="M10 25 Q14 27 18 25" stroke="#4ade80" stroke-width="1.5" fill="none" opacity=".5"/>
+      <path d="M7 25 Q14 29 21 25" stroke="#4ade80" stroke-width="1" fill="none" opacity=".3"/>
+    </svg>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="view active" id="view-visitas">
+
+<!-- Banner instalación PWA -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-txt">
+    <strong>📲 Instalar en tu teléfono</strong>
+    <span>Accede sin internet · Ícono en pantalla de inicio</span>
+  </div>
+  <button class="install-btn" id="installBtn" onclick="instalarPWA()">Instalar</button>
+  <button class="install-close" onclick="cerrarBanner()">✕</button>
+</div>
+
+<!-- Selector de pozo (cuando no viene del QR) -->
+<div class="well-picker" id="wellPicker">
+  <div class="well-picker-title">🛢 ¿En qué pozo estás?</div>
+  <div class="well-picker-sub">Escribe el número del pozo que vas a registrar</div>
+  <div class="well-picker-row">
+    <input class="well-picker-input" type="number" id="wpInput"
+      placeholder="Ej: 191" min="1" max="999"
+      onkeydown="if(event.key==='Enter')confirmarPozo()">
+    <button class="well-picker-btn" onclick="confirmarPozo()">Confirmar</button>
+  </div>
+  <div class="well-picker-suggestions" id="wpSuggestions"></div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="header-row">
+    <div class="header-text">
+      <h1 id="wellTitle">C-???</h1>
+      <p id="headerSub">Campo Cuichapa · Registro de Visita</p>
+    </div>
+    <div class="char-slot" style="height:130px">
+
+      <!-- MANRIQUE -->
+      <div class="char-m">
+        <svg viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg" width="115" height="153">
+          <ellipse cx="60" cy="158" rx="30" ry="5" fill="#000" opacity=".25"/>
+          <rect x="28" y="98" width="64" height="52" rx="14" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="32" y="136" width="22" height="20" rx="6" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="66" y="136" width="22" height="20" rx="6" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="30" y="150" width="26" height="12" rx="5" fill="#5C3317" stroke="#1a1a1a" stroke-width="2"/>
+          <rect x="64" y="150" width="26" height="12" rx="5" fill="#5C3317" stroke="#1a1a1a" stroke-width="2"/>
+          <rect x="28" y="132" width="64" height="7" rx="3" fill="#E0D9C0" stroke="#1a1a1a" stroke-width="1.5" opacity=".95"/>
+          <rect x="32" y="148" width="22" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="66" y="148" width="22" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="46" y="108" width="36" height="12" rx="4" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+          <text x="64" y="117" text-anchor="middle" font-size="6.5" font-weight="900" fill="#1a1a1a" font-family="Arial Black,sans-serif">PETROLERO</text>
+          <rect x="31" y="108" width="11" height="20" rx="3" fill="#222" stroke="#1a1a1a" stroke-width="1.5"/>
+          <rect x="32" y="110" width="9" height="11" rx="1" fill="#3a6a3a"/>
+          <circle cx="36" cy="108" r="1.5" fill="#ff4444"/>
+          <rect x="14" y="104" width="26" height="18" rx="9" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="80" y="104" width="26" height="18" rx="9" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="22" y="112" width="76" height="10" rx="5" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2"/>
+          <ellipse cx="22" cy="117" rx="10" ry="8" fill="#D4956A" stroke="#1a1a1a" stroke-width="2"/>
+          <ellipse cx="98" cy="117" rx="10" ry="8" fill="#D4956A" stroke="#1a1a1a" stroke-width="2"/>
+          <rect x="14" y="118" width="26" height="4" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="80" y="118" width="26" height="4" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="48" y="86" width="24" height="16" rx="8" fill="#D4956A" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M18 68 Q18 30 60 26 Q102 30 102 68 Q96 56 60 53 Q24 56 18 68Z" fill="#EEEADE" stroke="#1a1a1a" stroke-width="2.5"/>
+          <path d="M22 66 Q26 46 60 43 Q94 46 98 66 Q90 56 60 54 Q30 56 22 66Z" fill="#F7F4EA"/>
+          <rect x="24" y="64" width="72" height="9" rx="4" fill="#D8D5C5" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M57 36 Q60 26 63 36 Q66 43 60 46 Q54 43 57 36Z" fill="#FF7A00" stroke="#1a1a1a" stroke-width="1.5"/>
+          <ellipse cx="60" cy="68" rx="38" ry="36" fill="#D4956A" stroke="#1a1a1a" stroke-width="3"/>
+          <ellipse cx="22" cy="70" rx="7" ry="9" fill="#C07A50" stroke="#1a1a1a" stroke-width="2.5"/>
+          <ellipse cx="22" cy="70" rx="4" ry="6" fill="#A86040"/>
+          <ellipse cx="98" cy="70" rx="7" ry="9" fill="#C07A50" stroke="#1a1a1a" stroke-width="2.5"/>
+          <ellipse cx="98" cy="70" rx="4" ry="6" fill="#A86040"/>
+          <path d="M26 70 Q23 60 28 54" stroke="#1a0a04" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M94 70 Q97 60 92 54" stroke="#1a0a04" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M36 72 Q46 66 60 65 Q74 66 84 72" stroke="#1a0a04" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <rect x="28" y="63" width="28" height="17" rx="6" fill="#B8DDF8" stroke="#222" stroke-width="2.8" opacity=".85"/>
+          <rect x="64" y="63" width="28" height="17" rx="6" fill="#B8DDF8" stroke="#222" stroke-width="2.8" opacity=".85"/>
+          <line x1="56" y1="71" x2="64" y2="71" stroke="#222" stroke-width="2.5"/>
+          <line x1="28" y1="71" x2="22" y2="70" stroke="#222" stroke-width="2"/>
+          <line x1="92" y1="71" x2="98" y2="70" stroke="#222" stroke-width="2"/>
+          <path d="M31 65 Q37 63 50 66" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>
+          <path d="M67 65 Q73 63 86 66" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>
+          <circle cx="42" cy="71" r="5" fill="#2a1200"/>
+          <circle cx="78" cy="71" r="5" fill="#2a1200"/>
+          <circle cx="44" cy="69" r="2" fill="#fff"/>
+          <circle cx="80" cy="69" r="2" fill="#fff"/>
+          <path d="M30 60 Q42 56 54 60" stroke="#1a0a04" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M66 60 Q78 56 90 60" stroke="#1a0a04" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <ellipse cx="52" cy="80" rx="4" ry="3" fill="#B87040" opacity=".6"/>
+          <ellipse cx="68" cy="80" rx="4" ry="3" fill="#B87040" opacity=".6"/>
+          <path d="M40 86 Q60 98 80 86" stroke="#7A3010" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M43 87 Q60 96 77 87 Q76 93 60 94 Q44 93 43 87Z" fill="#FAEBD0" stroke="#7A3010" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <!-- CIRILO: corpulento, barba, lentes oscuros, pulgar arriba -->
+      <div class="char-c">
+        <svg viewBox="0 0 130 160" xmlns="http://www.w3.org/2000/svg" width="115" height="142">
+          <ellipse cx="65" cy="158" rx="36" ry="5" fill="#000" opacity=".25"/>
+          <rect x="30" y="136" width="26" height="20" rx="6" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="74" y="136" width="26" height="20" rx="6" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="28" y="150" width="30" height="12" rx="5" fill="#3A1F0A" stroke="#1a1a1a" stroke-width="2"/>
+          <rect x="72" y="150" width="30" height="12" rx="5" fill="#3A1F0A" stroke="#1a1a1a" stroke-width="2"/>
+          <rect x="22" y="96" width="86" height="48" rx="14" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="22" y="132" width="86" height="7" rx="3" fill="#E0D9C0" stroke="#1a1a1a" stroke-width="1.5" opacity=".95"/>
+          <rect x="30" y="148" width="26" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="74" y="148" width="26" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="48" y="106" width="36" height="12" rx="4" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+          <text x="66" y="115" text-anchor="middle" font-size="6.5" font-weight="900" fill="#1a1a1a" font-family="Arial Black,sans-serif">PETROLERO</text>
+          <rect x="30" y="106" width="11" height="20" rx="3" fill="#222" stroke="#1a1a1a" stroke-width="1.5"/>
+          <rect x="31" y="108" width="9" height="11" rx="1" fill="#3a6a3a"/>
+          <circle cx="35" cy="106" r="1.5" fill="#ff4444"/>
+          <rect x="8" y="100" width="20" height="42" rx="10" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="8" y="128" width="20" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <ellipse cx="18" cy="144" rx="13" ry="10" fill="#8A5C2A" stroke="#1a1a1a" stroke-width="2"/>
+          <rect x="102" y="98" width="20" height="42" rx="10" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="102" y="128" width="20" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <ellipse cx="112" cy="136" rx="14" ry="12" fill="#8A5C2A" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="104" y="128" width="22" height="14" rx="8" fill="#8A5C2A" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M116 128 Q122 118 118 110 Q114 106 110 110 L109 128Z" fill="#8A5C2A" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/>
+          <ellipse cx="114" cy="113" rx="4" ry="5" fill="#C08A50" stroke="#1a1a1a" stroke-width="1"/>
+          <rect x="52" y="84" width="26" height="16" rx="8" fill="#8A5C2A" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M20 70 Q20 28 65 24 Q110 28 110 70 Q103 56 65 53 Q27 56 20 70Z" fill="#EEEADE" stroke="#1a1a1a" stroke-width="2.5"/>
+          <path d="M24 68 Q28 44 65 41 Q102 44 106 68 Q98 56 65 53 Q32 56 24 68Z" fill="#F7F4EA"/>
+          <rect x="26" y="66" width="78" height="9" rx="4" fill="#D8D5C5" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M62 34 Q65 24 68 34 Q71 41 65 44 Q59 41 62 34Z" fill="#FF7A00" stroke="#1a1a1a" stroke-width="1.5"/>
+          <ellipse cx="65" cy="72" rx="42" ry="40" fill="#8A5C2A" stroke="#1a1a1a" stroke-width="3"/>
+          <ellipse cx="23" cy="74" rx="8" ry="10" fill="#7A4C1A" stroke="#1a1a1a" stroke-width="2.5"/>
+          <ellipse cx="23" cy="74" rx="5" ry="7" fill="#6A3C10"/>
+          <ellipse cx="107" cy="74" rx="8" ry="10" fill="#7A4C1A" stroke="#1a1a1a" stroke-width="2.5"/>
+          <ellipse cx="107" cy="74" rx="5" ry="7" fill="#6A3C10"/>
+          <path d="M27 74 Q24 62 30 54" stroke="#120804" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <path d="M103 74 Q106 62 100 54" stroke="#120804" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <rect x="26" y="65" width="34" height="19" rx="8" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="70" y="65" width="34" height="19" rx="8" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="2.5"/>
+          <path d="M29 67 Q38 65 54 69" stroke="#4488cc" stroke-width="2" fill="none" opacity=".5"/>
+          <path d="M73 67 Q82 65 98 69" stroke="#4488cc" stroke-width="2" fill="none" opacity=".5"/>
+          <line x1="60" y1="74" x2="70" y2="74" stroke="#1a1a1a" stroke-width="3"/>
+          <line x1="26" y1="74" x2="19" y2="72" stroke="#1a1a1a" stroke-width="2.5"/>
+          <line x1="104" y1="74" x2="111" y2="72" stroke="#1a1a1a" stroke-width="2.5"/>
+          <path d="M28 62 Q43 57 58 62" stroke="#120804" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M72 62 Q87 57 102 62" stroke="#120804" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M34 88 Q65 104 96 88 Q93 100 65 106 Q37 100 34 88Z" fill="#120804" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M42 82 Q65 89 88 82" stroke="#120804" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="65" cy="82" rx="9" ry="7" fill="#7A4C1A" stroke="#1a1a1a" stroke-width="2"/>
+          <ellipse cx="60" cy="83" rx="3" ry="2.5" fill="#6A3C10"/>
+          <ellipse cx="70" cy="83" rx="3" ry="2.5" fill="#6A3C10"/>
+        </svg>
+      </div>
+
+      <!-- JUAN CARLOS: cabello ondulado, barba corta, lentes naranja, manos en bolsillos -->
+      <div class="char-jc">
+        <svg viewBox="0 0 120 165" xmlns="http://www.w3.org/2000/svg" width="115" height="158">
+          <ellipse cx="60" cy="163" rx="30" ry="5" fill="#000" opacity=".25"/>
+          <rect x="28" y="138" width="22" height="22" rx="6" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="70" y="138" width="22" height="22" rx="6" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="26" y="152" width="26" height="12" rx="5" fill="#4A2808" stroke="#1a1a1a" stroke-width="2"/>
+          <rect x="68" y="152" width="26" height="12" rx="5" fill="#4A2808" stroke="#1a1a1a" stroke-width="2"/>
+          <rect x="24" y="100" width="72" height="50" rx="14" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="24" y="136" width="72" height="7" rx="3" fill="#E0D9C0" stroke="#1a1a1a" stroke-width="1.5" opacity=".95"/>
+          <rect x="28" y="150" width="22" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="70" y="150" width="22" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="42" y="110" width="36" height="12" rx="4" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+          <text x="60" y="119" text-anchor="middle" font-size="6.5" font-weight="900" fill="#1a1a1a" font-family="Arial Black,sans-serif">PETROLERO</text>
+          <rect x="30" y="112" width="11" height="20" rx="3" fill="#222" stroke="#1a1a1a" stroke-width="1.5"/>
+          <rect x="31" y="114" width="9" height="11" rx="1" fill="#3a6a3a"/>
+          <circle cx="35" cy="112" r="1.5" fill="#ff4444"/>
+          <rect x="10" y="106" width="18" height="40" rx="9" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="92" y="106" width="18" height="40" rx="9" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
+          <rect x="10" y="130" width="18" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="92" y="130" width="18" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
+          <rect x="28" y="132" width="8" height="10" rx="4" fill="#C07840" stroke="#1a1a1a" stroke-width="1.5"/>
+          <rect x="84" y="132" width="8" height="10" rx="4" fill="#C07840" stroke="#1a1a1a" stroke-width="1.5"/>
+          <rect x="46" y="88" width="28" height="16" rx="8" fill="#C07840" stroke="#1a1a1a" stroke-width="2"/>
+          <ellipse cx="60" cy="64" rx="40" ry="38" fill="#C07840" stroke="#1a1a1a" stroke-width="3"/>
+          <ellipse cx="20" cy="66" rx="7" ry="9" fill="#A86030" stroke="#1a1a1a" stroke-width="2.5"/>
+          <ellipse cx="20" cy="66" rx="4" ry="6" fill="#905020"/>
+          <ellipse cx="100" cy="66" rx="7" ry="9" fill="#A86030" stroke="#1a1a1a" stroke-width="2.5"/>
+          <ellipse cx="100" cy="66" rx="4" ry="6" fill="#905020"/>
+          <path d="M22 54 Q20 30 60 24 Q100 30 98 54 Q92 40 60 37 Q28 40 22 54Z" fill="#1a0a04" stroke="#1a1a1a" stroke-width="2.5"/>
+          <circle cx="42" cy="30" r="11" fill="#1a0a04" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="60" cy="26" r="12" fill="#1a0a04" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="78" cy="30" r="11" fill="#1a0a04" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M22 52 Q18 40 22 30 Q26 22 32 20" stroke="#1a0a04" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M98 52 Q102 40 98 30 Q94 22 88 20" stroke="#1a0a04" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M54 38 Q56 46 52 52" stroke="#1a0a04" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <rect x="24" y="58" width="30" height="16" rx="7" fill="#FF6000" stroke="#1a1a1a" stroke-width="2.8" opacity=".85"/>
+          <rect x="66" y="58" width="30" height="16" rx="7" fill="#FF6000" stroke="#1a1a1a" stroke-width="2.8" opacity=".85"/>
+          <path d="M27 60 Q36 58 48 62" stroke="#FFB060" stroke-width="2" fill="none" opacity=".7"/>
+          <path d="M69 60 Q78 58 90 62" stroke="#FFB060" stroke-width="2" fill="none" opacity=".7"/>
+          <line x1="54" y1="66" x2="66" y2="66" stroke="#1a1a1a" stroke-width="2.5"/>
+          <line x1="24" y1="66" x2="18" y2="64" stroke="#1a1a1a" stroke-width="2"/>
+          <line x1="96" y1="66" x2="102" y2="64" stroke="#1a1a1a" stroke-width="2"/>
+          <circle cx="39" cy="66" r="5.5" fill="#1a0800"/>
+          <circle cx="81" cy="66" r="5.5" fill="#1a0800"/>
+          <circle cx="41" cy="64" r="2" fill="#fff"/>
+          <circle cx="83" cy="64" r="2" fill="#fff"/>
+          <path d="M26 55 Q40 50 52 55" stroke="#1a0a04" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M68 55 Q80 50 94 55" stroke="#1a0a04" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="60" cy="78" rx="8" ry="6" fill="#A86030" stroke="#1a1a1a" stroke-width="1.8"/>
+          <ellipse cx="55" cy="79" rx="3" ry="2" fill="#905020"/>
+          <ellipse cx="65" cy="79" rx="3" ry="2" fill="#905020"/>
+          <path d="M32 86 Q60 102 88 86 Q86 98 60 104 Q34 98 32 86Z" fill="#1a0a04" stroke="#1a1a1a" stroke-width="2"/>
+          <path d="M42 82 Q60 88 78 82" stroke="#1a0a04" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M44 90 Q60 98 76 90 Q75 96 60 98 Q45 96 44 90Z" fill="#FAEBD0" stroke="#7A3010" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+    </div><!-- /char-slot -->
+  </div>
+</div>
+
+<!-- BANNERS -->
+<div class="char-banner banner-m">
+  <div class="banner-inner">
+    <span class="banner-icon">🌊</span>
+    <div class="banner-txt">
+      <strong>Manrique · Recorredor de Campo</strong>
+      <span>Plataforma offshore · Cuichapa</span>
+    </div>
+  </div>
+</div>
+<div class="char-banner banner-c">
+  <div class="banner-inner">
+    <span class="banner-icon">🏭</span>
+    <div class="banner-txt">
+      <strong>Cirilo · Recorredor de Campo</strong>
+      <span>Refinería · Campo Cuichapa</span>
+    </div>
+  </div>
+</div>
+<div class="char-banner banner-jc">
+  <div class="banner-inner">
+    <span class="banner-icon">🛢️</span>
+    <div class="banner-txt">
+      <strong>Juan Carlos · Recorredor de Campo</strong>
+      <span>Producción · Campo Cuichapa</span>
+    </div>
+  </div>
+</div>
+
+<!-- GPS -->
+<div class="gps-bar" id="gpsBar">📡 Obteniendo ubicación GPS...</div>
+<div class="gps-coords" id="gpsCoords"></div>
+
+<!-- Recorredor -->
+<div class="card">
+  <div class="lbl">👷 Recorredor <span class="req">*</span></div>
+  <div class="rec-btns">
+    <button class="rec-btn" onclick="selRec(this,'Manrique','m')"><span class="dot" id="dot-Manrique"></span>Manrique</button>
+    <button class="rec-btn" onclick="selRec(this,'Cirilo','c')"><span class="dot" id="dot-Cirilo"></span>Cirilo</button>
+    <button class="rec-btn" onclick="selRec(this,'Juan Carlos','jc')"><span class="dot" id="dot-Juan Carlos"></span>Juan Carlos</button>
+  </div>
+  <button class="vac-btn" onclick="toggleVacModal()">🏖 Descanso / Vacaciones</button>
+  <div class="vac-modal" id="vacModal">
+    <div class="vac-modal-title">🏖 Configurar Descanso / Vacaciones</div>
+    <div class="vac-rec-btns">
+      <button class="vac-rec-btn" onclick="selVacRec(this,'Manrique')">Manrique</button>
+      <button class="vac-rec-btn" onclick="selVacRec(this,'Cirilo')">Cirilo</button>
+      <button class="vac-rec-btn" onclick="selVacRec(this,'Juan Carlos')">J. Carlos</button>
+    </div>
+    <div class="vac-fields">
+      <div class="field"><div class="lbl">Fecha inicio</div><input type="date" id="vacFecha"></div>
+      <div class="field"><div class="lbl">Días fuera</div><input type="number" id="vacDias" placeholder="Ej: 7" min="1" max="60"></div>
+    </div>
+    <button class="vac-save" onclick="guardarVacaciones()">💾 Guardar</button>
+    <div class="vac-status" id="vacStatus"></div>
+  </div>
+  <div class="cnt-panel" id="cnt-panel">
+    <div class="cnt-row">
+      <div><span class="cnt-name" id="cnt-nombre"></span><br><span class="cnt-status" id="cnt-status"></span></div>
+      <div style="text-align:right"><div class="cnt-big" id="cnt-num">0</div><div class="cnt-sub" id="cnt-sub"></div></div>
+    </div>
+    <div class="pbar"><div class="pfill" id="cnt-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('co',this)">🔧 C.O.</button>
+  <button class="tab" onclick="showTab('nivel',this)">📊 Nivel</button>
+  <button class="tab" onclick="showTab('registro',this)">📋 Registro</button>
+</div>
+
+<!-- C.O. -->
+<div class="panel active" id="panel-co">
+  <div class="sec-title">Control Operativo</div>
+  <div class="field">
+    <div class="lbl">Estatus del Pozo <span class="req">*</span></div>
+    <div class="btn-group">
+      <button class="opt-btn" onclick="selOpt(this,'coEstatus','Abierto','sel-c')">🟢 Abierto</button>
+      <button class="opt-btn" onclick="selOpt(this,'coEstatus','Cerrado','sel-c')">🔴 Cerrado</button>
+      <button class="opt-btn" onclick="selOpt(this,'coEstatus','Intermitente','sel-c')">🟡 Intermitente</button>
+    </div>
+    <input type="hidden" id="coEstatus">
+  </div>
+  <div class="field">
+    <div class="lbl">Flujo <span class="req">*</span></div>
+    <div class="btn-group">
+      <button class="opt-btn" onclick="selOpt(this,'coFlujo','FT','sel-b')">🛢 FT</button>
+      <button class="opt-btn" onclick="selOpt(this,'coFlujo','BSC','sel-b')">⛽ BSC</button>
+    </div>
+    <input type="hidden" id="coFlujo">
+  </div>
+  <div class="field">
+    <div class="lbl">Sistema de Recuperación <span class="req">*</span></div>
+    <div class="btn-group">
+      <button class="opt-btn" onclick="selSys(this,'BN')">BN</button>
+      <button class="opt-btn" onclick="selSys(this,'BM')">BM</button>
+      <button class="opt-btn" onclick="selSys(this,'FY')">FY</button>
+    </div>
+    <input type="hidden" id="coSistema">
+  </div>
+  <div class="cond" id="cond-bnfy">
+    <div class="num-row">
+      <div class="field"><div class="lbl">PTP kg/cm² <span class="req">*</span></div><input type="number" id="coTP" placeholder="7.5" step="0.1"></div>
+      <div class="field"><div class="lbl">LDD kg/cm² <span class="req">*</span></div><input type="number" id="coLDD" placeholder="5.0" step="0.1"></div>
+    </div>
+    <div class="num-row">
+      <div class="field"><div class="lbl">PTR kg/cm² <span class="req">*</span></div><input type="number" id="coTR" placeholder="3.2" step="0.1"></div>
+      <div class="field" id="lbn-field" style="display:none"><div class="lbl">LBN kg/cm²</div><input type="number" id="coLBN" placeholder="2.0" step="0.1"></div>
+    </div>
+  </div>
+  <div class="cond" id="cond-bm">
+    <div class="num-row">
+      <div class="field"><div class="lbl">PTP kg/cm² <span class="req">*</span></div><input type="number" id="coPresion" placeholder="7.5" step="0.1"></div>
+      <div class="field"><div class="lbl">PTR kg/cm² <span class="req">*</span></div><input type="number" id="coPTR_bm" placeholder="3.2" step="0.1"></div>
+    </div>
+    <div class="num-row">
+      <div class="field"><div class="lbl">Velocidad EPM <span class="req">*</span></div><input type="number" id="coEmb" placeholder="8" step="1"></div>
+      <div class="field"><div class="lbl">Carrera (pulgadas) <span class="req">*</span></div><input type="number" id="coCarrera" placeholder="48" step="1"></div>
+    </div>
+  </div>
+  <div class="field"><div class="lbl">Observaciones</div><textarea id="coObs" placeholder="Condiciones generales del pozo..."></textarea></div>
+</div>
+
+<!-- Nivel -->
+<div class="panel" id="panel-nivel">
+  <div class="sec-title">Nivel Frac Tank</div>
+  <div class="num-row">
+    <div class="field"><div class="lbl">CTM cm <span class="req">*</span></div><input type="number" id="nivCTM" placeholder="63" step="1"></div>
+    <div class="field"><div class="lbl">BLS barriles <span class="req">*</span></div><input type="number" id="nivBLS" placeholder="101" step="1"></div>
+  </div>
+  <div class="field"><div class="lbl">Hora de Lectura</div><div class="hora-box" id="horaBox">⏱ Se captura al enviar</div></div>
+  <div class="field"><div class="lbl">Observaciones</div><textarea id="nivObs" placeholder="Estado del frac tank..."></textarea></div>
+</div>
+
+<!-- Registro -->
+<div class="panel" id="panel-registro">
+  <div class="sec-title">Registro de Actividades</div>
+  <div class="chk-row" onclick="toggleChk('trabajo')">
+    <div class="chk-box" id="icon-trabajo"></div>
+    <div><div class="chk-lbl">🔨 Trabajo</div><div class="chk-sub">Se realizó trabajo en el pozo</div></div>
+  </div>
+  <div class="chk-row" onclick="toggleChk('drenar')">
+    <div class="chk-box" id="icon-drenar"></div>
+    <div><div class="chk-lbl">💧 Drenar / Barrido</div><div class="chk-sub">Se realizó drenado o barrido</div></div>
+  </div>
+  <div class="chk-row" onclick="toggleChk('aforo')">
+    <div class="chk-box" id="icon-aforo"></div>
+    <div><div class="chk-lbl">📏 Aforo / Proyección</div><div class="chk-sub">Medición de producción o proyección</div></div>
+  </div>
+  <div class="aforo-extra" id="aforo-input">
+    <div class="lbl">Cantidad BPH <span class="req">*</span></div>
+    <input type="number" id="regAforo" placeholder="21.7" step="0.1">
+  </div>
+  <div class="chk-row" onclick="toggleChk('intermitente')">
+    <div class="chk-box" id="icon-intermitente"></div>
+    <div><div class="chk-lbl">🔄 Intermitente</div><div class="chk-sub">Aporte intermitente del pozo</div></div>
+  </div>
+  <!-- Estado del pozo -->
+  <div class="field" style="margin-top:6px">
+    <div class="lbl">¿Cómo se encuentra el pozo? <span class="req">*</span></div>
+    <div class="btn-group">
+      <button class="opt-btn" id="btn-estable" onclick="selEstado(this,'Estable')" style="border-color:#16a34a">
+        ✅ Estable
+      </button>
+      <button class="opt-btn" id="btn-inestable" onclick="selEstado(this,'Inestable')" style="border-color:#dc2626">
+        ⚠️ Inestable
+      </button>
+    </div>
+    <input type="hidden" id="regEstado">
+  </div>
+  <div class="field" style="margin-top:2px"><div class="lbl">Observaciones</div><textarea id="regObs" placeholder="Detalles adicionales..."></textarea></div>
+</div>
+
+<!-- EVIDENCIA FOTOGRÁFICA -->
+<div class="foto-card">
+  <div class="foto-title">📸 Evidencia Fotográfica</div>
+  <div class="foto-upload-area" onclick="document.getElementById('fotoInput').click()">
+    <input type="file" id="fotoInput" accept="image/*" capture="environment" multiple onchange="agregarFotos(event)">
+    <span class="foto-icon">📷</span>
+    <div class="foto-label">Toca para tomar foto o seleccionar</div>
+    <div class="foto-sub">Puedes agregar varias fotos como evidencia</div>
+  </div>
+  <div class="foto-previews" id="fotoPreviews"></div>
+  <div class="foto-count" id="fotoCount"></div>
+</div>
+
+<a class="maps-link" id="mapsLink" href="#" target="_blank">📍 Ver mi ubicación en Google Maps</a>
+</div><!-- /view-visitas -->
+
+<!-- ══ VIEW: CATÁLOGO DE POZOS ══ -->
+<div class="view" id="view-catalogo">
+
+  <!-- Header catálogo -->
+  <div class="cat-header">
+    <h2>🛢 Información de Pozos</h2>
+    <p>Campo Cuichapa · Selecciona un pozo para ver su ficha</p>
+  </div>
+
+  <!-- Buscador -->
+  <input class="well-search" type="text" id="wellSearch" placeholder="🔍  Buscar pozo C-..." oninput="filtrarPozos()">
+
+  <!-- Lista de pozos -->
+  <div class="well-list" id="wellList"></div>
+
+  <!-- Botón entrar — oculto, auto se activa -->
+  <button class="enter-btn" id="enterBtn" style="display:none" onclick="entrarPozo()"></button>
+
+</div><!-- /view-catalogo -->
+
+<!-- ══ VIEW: DETALLE POZO ══ -->
+<div class="view" id="view-pozo">
+  <div class="pozo-back" onclick="switchView('catalogo')">← Volver a lista de pozos</div>
+
+  <div class="pozo-header" id="pozoHeader">
+    <div class="pozo-icon-big">
+      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="34" height="34">
+        <polygon points="20,3 5,37 35,37" fill="none" stroke="#fff" stroke-width="2"/>
+        <line x1="5" y1="37" x2="35" y2="37" stroke="#fff" stroke-width="3"/>
+        <line x1="9" y1="29" x2="31" y2="29" stroke="rgba(255,255,255,.5)" stroke-width="1.5"/>
+        <line x1="13" y1="21" x2="27" y2="21" stroke="rgba(255,255,255,.5)" stroke-width="1.5"/>
+        <circle cx="20" cy="4" r="2.5" fill="#FF7A00"><animate attributeName="opacity" values=".3;1;.3" dur="2s" repeatCount="indefinite"/></circle>
+      </svg>
+    </div>
+    <div class="pozo-header-txt">
+      <h2 id="pozoTitle">C-???</h2>
+      <p>Campo Cuichapa · Ficha técnica</p>
+    </div>
+  </div>
+
+  <!-- Sección: Ubicación -->
+  <div class="info-section">
+    <div class="info-section-title">📍 Ubicación</div>
+    <div class="info-row">
+      <span class="info-label">Latitud</span>
+      <span class="info-value empty" id="pi-lat">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Longitud</span>
+      <span class="info-value empty" id="pi-lon">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Área / Batería</span>
+      <span class="info-value empty" id="pi-area">Por definir</span>
+    </div>
+    <button class="info-edit-btn" onclick="editarInfo('ubicacion')">✏️ Agregar ubicación</button>
+  </div>
+
+  <!-- Sección: Tipo de válvulas -->
+  <div class="info-section">
+    <div class="info-section-title">🔧 Válvulas</div>
+    <div class="info-row">
+      <span class="info-label">Tipo de válvula</span>
+      <span class="info-value empty" id="pi-valvula">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Tamaño</span>
+      <span class="info-value empty" id="pi-valvula-size">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Estado</span>
+      <span class="info-value empty" id="pi-valvula-estado">Por definir</span>
+    </div>
+    <button class="info-edit-btn" onclick="editarInfo('valvulas')">✏️ Agregar info de válvulas</button>
+  </div>
+
+  <!-- Sección: Sistema de bombeo -->
+  <div class="info-section">
+    <div class="info-section-title">⚙️ Sistema de Bombeo</div>
+    <div class="info-row">
+      <span class="info-label">Tipo</span>
+      <span class="info-value empty" id="pi-bombeo">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Modelo / Marca</span>
+      <span class="info-value empty" id="pi-bombeo-modelo">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Capacidad</span>
+      <span class="info-value empty" id="pi-bombeo-cap">Por definir</span>
+    </div>
+    <button class="info-edit-btn" onclick="editarInfo('bombeo')">✏️ Agregar sistema de bombeo</button>
+  </div>
+
+  <!-- Sección: Frac Tank -->
+  <div class="info-section">
+    <div class="info-section-title">🛢 Frac Tank</div>
+    <div class="info-row">
+      <span class="info-label">Presencia de Frac Tank</span>
+      <span class="info-value empty" id="pi-fractank">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Capacidad (BLS)</span>
+      <span class="info-value empty" id="pi-fractank-cap">Por definir</span>
+    </div>
+    <button class="info-edit-btn" onclick="editarInfo('fractank')">✏️ Agregar info de frac tank</button>
+  </div>
+
+  <!-- Sección: Estado mecánico -->
+  <div class="info-section">
+    <div class="info-section-title">🔩 Estado Mecánico</div>
+    <div class="info-row">
+      <span class="info-label">Estado general</span>
+      <span class="info-value empty" id="pi-mecanico">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Último mantenimiento</span>
+      <span class="info-value empty" id="pi-mecanico-fecha">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Observaciones</span>
+      <span class="info-value empty" id="pi-mecanico-obs">Por definir</span>
+    </div>
+    <button class="info-edit-btn" onclick="editarInfo('mecanico')">✏️ Agregar estado mecánico</button>
+  </div>
+
+  <!-- Sección: Inyección de químicos -->
+  <div class="info-section">
+    <div class="info-section-title">🧪 Inyección de Químicos</div>
+    <div class="info-row">
+      <span class="info-label">¿Hay inyección?</span>
+      <span class="info-value empty" id="pi-quimicos">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Tipo de químico</span>
+      <span class="info-value empty" id="pi-quimicos-tipo">Por definir</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Dosis / Frecuencia</span>
+      <span class="info-value empty" id="pi-quimicos-dosis">Por definir</span>
+    </div>
+    <button class="info-edit-btn" onclick="editarInfo('quimicos')">✏️ Agregar inyección de químicos</button>
+  </div>
+
+</div><!-- /view-pozo -->
+
+<!-- ══ VIEW: MAPA / UBICACIÓN DE POZOS ══ -->
+<div class="view" id="view-mapa">
+
+  <div class="cat-header" style="background:linear-gradient(135deg,#064e3b,#065f46)">
+    <h2>📍 Ubicación de Pozos</h2>
+    <p>Campo Cuichapa · Toca un marcador o busca un pozo</p>
+  </div>
+
+  <!-- Búsqueda -->
+  <div class="map-search-bar">
+    <div class="lbl">🔍 Buscar pozo</div>
+    <div class="map-input-wrap">
+      <input class="map-input" type="text" id="mapSearchInput"
+        placeholder="Ej: 191, 324, 603..." oninput="buscarPozo()" maxlength="5">
+      <button class="map-search-btn" onclick="buscarPozo()">Ir</button>
+    </div>
+  </div>
+
+  <!-- Info card del pozo seleccionado -->
+  <div class="map-info-card" id="mapInfoCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="map-well-title" id="mapWellName" style="margin:0">C-???</div>
+      <button onclick="abrirEnMaps()" style="padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗺 Maps</button>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px">Latitud</div>
+        <div style="font-family:'Courier New',monospace;font-size:14px;color:var(--txt);font-weight:700" id="mapLat">—</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px">Longitud</div>
+        <div style="font-family:'Courier New',monospace;font-size:14px;color:var(--txt);font-weight:700" id="mapLon">—</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px">DMS</div>
+        <div style="font-size:12px;color:var(--txt2)" id="mapDMS">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAPA LEAFLET -->
+  <div id="mapContainer"></div>
+
+  <!-- Chips de pozos con coords -->
+  <div class="map-well-list">
+    <div class="map-well-list-title">Pozos con ubicación disponible (toca para ir)</div>
+    <div class="map-well-chips" id="mapChips"></div>
+  </div>
+
+</div><!-- /view-mapa -->
+
+</div><!-- /wrap -->
+
+<!-- ══ LOGIN MODAL ══ -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-icon">🔒</div>
+    <div class="login-title">Acceso Restringido</div>
+    <div class="login-sub">Esta sección es exclusiva para supervisión</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="loginUser" placeholder="Usuario" autocomplete="off">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-err" id="loginErr">❌ Usuario o contraseña incorrectos</div>
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <button class="login-cancel" onclick="closeLogin()">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="send-fixed">
+  <div class="send-wrap">
+    <button class="send-btn" id="sendBtn" onclick="enviarTodo()">📤 Enviar reporte a WhatsApp</button>
+  </div>
+</div>
+
+<script>
+var W=location.hash.replace('#','')||'???';
+var la=0,lo=0,ac=0,REC='',nightMode=false;
+var checks={trabajo:false,drenar:false,aforo:false,intermitente:false};
+var CICLOS={'Cirilo':new Date(2026,4,1),'Manrique':new Date(2026,4,14),'Juan Carlos':new Date(2026,4,7)};
+var THEMES=['m-active','c-active','jc-active'];
+
+document.getElementById('wellTitle').textContent='C-'+W;
+document.title='C-'+W;
+
+['Manrique','Cirilo','Juan Carlos'].forEach(function(n){
+  var i=getCicloInfo(n);
+  document.getElementById('dot-'+n).className='dot '+(i.trabajando?'dot-green':'dot-yellow');
+});
+
+function toggleMode(){
+  nightMode=!nightMode;
+  document.body.classList.toggle('night',nightMode);
+  document.getElementById('modeBtn').textContent=nightMode?'☀️ Día':'🌙 Noche';
+  try{localStorage.setItem('cuichapa_mode',nightMode?'night':'day');}catch(e){}
+}
+try{if(localStorage.getItem('cuichapa_mode')==='night'){nightMode=true;document.body.classList.add('night');document.getElementById('modeBtn').textContent='☀️ Día';}}catch(e){}
+
+function gpsOk(p){
+  la=p.coords.latitude;lo=p.coords.longitude;ac=Math.round(p.coords.accuracy);
+  document.getElementById('gpsBar').className='gps-bar ok';
+  document.getElementById('gpsBar').innerHTML='✅ GPS listo · ±'+ac+' metros';
+  document.getElementById('gpsCoords').style.display='block';
+  document.getElementById('gpsCoords').textContent='📍 '+la.toFixed(6)+', '+lo.toFixed(6);
+  document.getElementById('mapsLink').style.display='block';
+  document.getElementById('mapsLink').href='https://maps.google.com/?q='+la+','+lo;
+}
+function gpsErr(){
+  document.getElementById('gpsBar').className='gps-bar err';
+  document.getElementById('gpsBar').innerHTML='⚠️ Sin GPS — activa ubicación en tu celular';
+}
+navigator.geolocation?navigator.geolocation.getCurrentPosition(gpsOk,gpsErr,{enableHighAccuracy:true,timeout:15000,maximumAge:0}):gpsErr();
+
+function showTab(id,btn){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+  btn.classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+function selRec(btn,nombre,theme){
+  document.querySelectorAll('.rec-btn').forEach(function(b){b.classList.remove('sel')});
+  btn.classList.add('sel');
+  REC=nombre;
+  // Remove all themes
+  THEMES.forEach(function(t){document.body.classList.remove(t)});
+  document.body.classList.add(theme+'-active');
+  // Update header subtitle
+  var subs={'Manrique':'🌊 Plataforma Offshore · Cuichapa','Cirilo':'🏭 Refinería · Cuichapa','Juan Carlos':'🛢 Producción de Campo · Cuichapa'};
+  document.getElementById('headerSub').textContent=subs[nombre]||'Campo Cuichapa';
+  mostrarContador(nombre);
+}
+
+function diffDays(a,b){return Math.floor((b-a)/(1000*60*60*24));}
+function getCicloInfo(nombre){
+  var ref=CICLOS[nombre],hoy=new Date();hoy.setHours(0,0,0,0);
+  var dias=diffDays(ref,hoy);if(dias<0)dias=((dias%21)+21)%21;
+  var pos=dias%21,t=pos<14;
+  var ini=new Date(ref.getTime()+(dias-pos)*86400000);
+  return{trabajando:t,diaEnCiclo:t?pos+1:pos-13,inicioTrabajo:ini,iniStr:ini.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit'})};
+}
+function getCicloKey(n){var i=getCicloInfo(n);return 'cuichapa_'+n+'_'+i.inicioTrabajo.toISOString().slice(0,10);}
+function getVisitas(n){try{var d=localStorage.getItem(getCicloKey(n));return d?JSON.parse(d):[];}catch(e){return[];}}
+function agregarVisita(n,p){var v=getVisitas(n);v.push({pozo:p,fecha:new Date().toISOString()});try{localStorage.setItem(getCicloKey(n),JSON.stringify(v));}catch(e){}}
+
+function mostrarContador(nombre){
+  var i=getCicloInfo(nombre),n=getVisitas(nombre).length;
+  document.getElementById('cnt-panel').className='cnt-panel show';
+  document.getElementById('cnt-nombre').textContent=nombre;
+  if(i.trabajando){
+    document.getElementById('cnt-status').innerHTML='🟢 Día '+i.diaEnCiclo+' de 14 · desde '+i.iniStr;
+    document.getElementById('cnt-num').textContent=n;
+    document.getElementById('cnt-sub').textContent=n===1?'pozo visitado':'pozos visitados';
+    document.getElementById('cnt-bar').style.cssText='width:'+Math.min(100,Math.round(n/14*100))+'%';
+  }else{
+    document.getElementById('cnt-status').innerHTML='🟡 Descansando · Día '+i.diaEnCiclo+' de 7';
+    document.getElementById('cnt-num').textContent='💤';
+    document.getElementById('cnt-sub').textContent='En descanso';
+    document.getElementById('cnt-bar').style.cssText='width:100%;background:linear-gradient(90deg,#f59e0b,#fcd34d)';
+  }
+}
+
+function selEstado(btn, val){
+  document.querySelectorAll('#btn-estable,#btn-inestable').forEach(function(b){
+    b.classList.remove('sel-a','sel-b');
+    b.style.background=''; b.style.color='';
+  });
+  if(val==='Estable'){
+    btn.style.background='#16a34a'; btn.style.color='#fff';
+  } else {
+    btn.style.background='#dc2626'; btn.style.color='#fff';
+  }
+  document.getElementById('regEstado').value = val;
+}
+
+function selOpt(btn,hid,val,cls){
+  btn.parentElement.querySelectorAll('.opt-btn').forEach(function(b){b.classList.remove('sel-a','sel-b','sel-c')});
+  btn.classList.add(cls);document.getElementById(hid).value=val;
+}
+function selSys(btn,val){
+  selOpt(btn,'coSistema',val,'sel-a');
+  document.getElementById('cond-bnfy').className='cond'+(val==='BN'||val==='FY'?' show':'');
+  document.getElementById('cond-bm').className='cond'+(val==='BM'?' show':'');
+  // LBN solo aparece para BN
+  var lbnField=document.getElementById('lbn-field');
+  if(lbnField) lbnField.style.display=(val==='BN'?'block':'none');
+}
+function toggleChk(key){
+  checks[key]=!checks[key];
+  var icon=document.getElementById('icon-'+key);
+  icon.parentElement.parentElement.classList.toggle('on',checks[key]);
+  icon.textContent=checks[key]?'✓':'';
+  if(key==='aforo')document.getElementById('aforo-input').style.display=checks[key]?'block':'none';
+}
+
+function gpsLine(){return la?'📍 GPS: '+la.toFixed(6)+', '+lo.toFixed(6)+' (±'+ac+'m)\n🗺 maps.google.com/?q='+la+','+lo:'📍 GPS: No disponible';}
+function now(){var d=new Date();return d.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'})+'  '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});}
+function v(id){return document.getElementById(id).value.trim();}
+// ══ VACACIONES ══
+var vacRecSel = '';
+var fotos = [];
+
+function toggleVacModal(){
+  var m = document.getElementById('vacModal');
+  m.classList.toggle('open');
+  if(m.classList.contains('open')) renderVacStatus();
+}
+
+function selVacRec(btn, nombre){
+  document.querySelectorAll('.vac-rec-btn').forEach(function(b){b.classList.remove('sel')});
+  btn.classList.add('sel');
+  vacRecSel = nombre;
+  // Set today as default date
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('vacFecha').value = today;
+  renderVacStatus();
+}
+
+function getVacaciones(nombre){
+  try{ var d = localStorage.getItem('vac_'+nombre); return d ? JSON.parse(d) : []; }catch(e){return [];}
+}
+function setVacaciones(nombre, arr){
+  try{ localStorage.setItem('vac_'+nombre, JSON.stringify(arr)); }catch(e){}
+}
+
+function guardarVacaciones(){
+  if(!vacRecSel){ alert('Selecciona el recorredor'); return; }
+  var fecha = document.getElementById('vacFecha').value;
+  var dias  = parseInt(document.getElementById('vacDias').value);
+  if(!fecha){ alert('Selecciona la fecha de inicio'); return; }
+  if(!dias || dias < 1){ alert('Ingresa el número de días'); return; }
+  var arr = getVacaciones(vacRecSel);
+  arr.push({ inicio: fecha, dias: dias });
+  setVacaciones(vacRecSel, arr);
+  document.getElementById('vacDias').value = '';
+  renderVacStatus();
+  // Refresh dots and counter
+  ['Manrique','Cirilo','Juan Carlos'].forEach(function(n){
+    var i = getCicloInfo(n);
+    document.getElementById('dot-'+n).className = 'dot '+(i.trabajando?'dot-green':'dot-yellow');
+  });
+  if(REC) mostrarContador(REC);
+  showToast('✅ Vacaciones guardadas para '+vacRecSel);
+}
+
+function borrarVacacion(nombre, idx){
+  var arr = getVacaciones(nombre);
+  arr.splice(idx, 1);
+  setVacaciones(nombre, arr);
+  renderVacStatus();
+  if(REC) mostrarContador(REC);
+}
+
+function renderVacStatus(){
+  var html = '';
+  var nombres = vacRecSel ? [vacRecSel] : ['Manrique','Cirilo','Juan Carlos'];
+  nombres.forEach(function(nombre){
+    var arr = getVacaciones(nombre);
+    if(!arr.length) return;
+    html += '<div style="font-size:11px;font-weight:700;color:var(--txt2);margin:8px 0 4px">'+nombre+'</div>';
+    arr.forEach(function(v, i){
+      var end = new Date(v.inicio);
+      end.setDate(end.getDate() + v.dias);
+      var endStr = end.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+      html += '<div class="vac-item">'
+        +'<span class="vac-item-txt">🏖 '+v.inicio+' · '+v.dias+' días (hasta '+endStr+')</span>'
+        +'<button class="vac-item-del" onclick="borrarVacacion(\''+nombre+'\','+i+')">✕</button>'
+        +'</div>';
+    });
+  });
+  document.getElementById('vacStatus').innerHTML = html || (vacRecSel ? '<div style="font-size:12px;color:var(--txt2);margin-top:8px">Sin vacaciones registradas para '+vacRecSel+'</div>' : '');
+}
+
+// Adjust cycle info to account for vacation days
+var _origGetCicloInfo = getCicloInfo;
+getCicloInfo = function(nombre){
+  var base = _origGetCicloInfo(nombre);
+  // Count vacation days that fall within or before current date
+  var vacs = getVacaciones(nombre);
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var extraDays = 0;
+  vacs.forEach(function(v){
+    var start = new Date(v.inicio);
+    var end   = new Date(v.inicio);
+    end.setDate(end.getDate() + v.dias);
+    if(start <= hoy){
+      // Days of this vacation that have already passed
+      var passed = Math.min(v.dias, Math.floor((hoy - start)/(1000*60*60*24)));
+      extraDays += passed;
+    }
+  });
+  // Shift the reference date forward by vacation days
+  if(extraDays > 0){
+    var ref2 = new Date(CICLOS[nombre].getTime() + extraDays * 86400000);
+    var dias2 = Math.floor((hoy - ref2)/(1000*60*60*24));
+    if(dias2 < 0) dias2 = ((dias2 % 21) + 21) % 21;
+    var pos2  = dias2 % 21;
+    var t2    = pos2 < 14;
+    var ini2  = new Date(ref2.getTime() + (dias2 - pos2) * 86400000);
+    return {
+      trabajando: t2,
+      diaEnCiclo: t2 ? pos2+1 : pos2-13,
+      inicioTrabajo: ini2,
+      iniStr: ini2.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit'})
+    };
+  }
+  return base;
+};
+
+// ══ FOTOS ══
+function agregarFotos(e){
+  var files = Array.from(e.target.files);
+  files.forEach(function(file){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      fotos.push(ev.target.result);
+      renderFotos();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+}
+
+function borrarFoto(idx){
+  fotos.splice(idx, 1);
+  renderFotos();
+}
+
+function renderFotos(){
+  var prev = document.getElementById('fotoPreviews');
+  var count = document.getElementById('fotoCount');
+  prev.innerHTML = fotos.map(function(src, i){
+    return '<div class="foto-thumb-wrap">'
+      +'<img src="'+src+'" alt="foto '+(i+1)+'">'
+      +'<button class="foto-del" onclick="borrarFoto('+i+')">✕</button>'
+      +'</div>';
+  }).join('');
+  count.textContent = fotos.length ? '📸 '+fotos.length+' foto'+(fotos.length===1?'':'s')+' adjunta'+(fotos.length===1?'':'s') : '';
+}
+
+
+function enviarTodo(){
+  if(!REC){alert('Selecciona tu nombre primero');return}
+  var ci=getCicloInfo(REC);
+  if(!ci.trabajando&&!confirm('Estás en día de descanso. ¿Registrar de todas formas?'))return;
+  var msg='📋 *REPORTE DE VISITA*\n🛢 Pozo: *C-'+W+'*\n👷 Recorredor: '+REC+'\n📅 '+now()+'\n';
+  var ok=false;
+  var est=v('coEstatus'),flu=v('coFlujo'),sis=v('coSistema');
+  if(est||flu||sis){
+    if(!est){alert('C.O.: Selecciona Estatus');return}
+    if(!flu){alert('C.O.: Selecciona Flujo');return}
+    if(!sis){alert('C.O.: Selecciona Sistema');return}
+    var d='';
+    if(sis==='BN'||sis==='FY'){var tp=v('coTP'),ld=v('coLDD'),tr=v('coTR');if(!tp||!ld||!tr){alert('C.O.: Falta PTP, LDD o PTR');return}var lbn=v('coLBN');d='PTP: '+tp+' · LDD: '+ld+' · PTR: '+tr+' kg/cm²'+(lbn&&sis==='BN'?' · LBN: '+lbn+' kg/cm²':'');}
+    else if(sis==='BM'){var p2=v('coPresion'),ptr2=v('coPTR_bm'),e2=v('coEmb'),c2=v('coCarrera');if(!p2||!ptr2||!e2||!c2){alert('C.O.: Falta PTP, PTR, Velocidad EPM o Carrera');return}d='PTP: '+p2+' · PTR: '+ptr2+' kg/cm² · Vel: '+e2+' EPM · Car: '+c2+' pulg';}
+    msg+='══════════════════\n🔧 *CONTROL OPERATIVO*\n📌 Estatus: '+est+'\n💧 Flujo: '+flu+'\n⚙️ Sistema: '+sis+'\n'+d+'\n'+(v('coObs')?'📝 '+v('coObs')+'\n':'');ok=true;
+  }
+  var ctm=v('nivCTM'),bls=v('nivBLS');
+  if(ctm||bls){
+    if(!ctm||!bls){alert('Nivel: Falta CTM o BLS');return}
+    var hr=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('horaBox').textContent='⏱ '+hr;
+    msg+='══════════════════\n📊 *NIVEL FRAC TANK*\n📏 CTM: '+ctm+' cm · 🛢 BLS: '+bls+' bls · 🕐 '+hr+'\n'+(v('nivObs')?'📝 '+v('nivObs')+'\n':'');ok=true;
+  }
+  if(checks.trabajo||checks.drenar||checks.aforo||checks.intermitente){
+    if(checks.aforo&&!v('regAforo')){alert('Falta cantidad de Aforo');return}
+    var a=[];
+    a.push(checks.trabajo?'✅ Trabajo':'❌ Trabajo');
+    a.push(checks.drenar?'✅ Drenar':'❌ Drenar');
+    a.push(checks.aforo?'✅ Aforo/Proyección: '+v('regAforo')+' BPH':'❌ Aforo/Proyección');
+    a.push(checks.intermitente?'✅ Intermitente':'❌ Intermitente');
+    var estado=v('regEstado');
+    if(estado) a.push('🔍 Estado del pozo: '+estado);
+    msg+='══════════════════\n📋 *REGISTRO*\n'+a.join('\n')+'\n'+(v('regObs')?'📝 '+v('regObs')+'\n':'');ok=true;
+  }
+  if(!ok){alert('Llena al menos un apartado antes de enviar');return}
+  msg+='══════════════════\n'+gpsLine()+'\n';
+  if(fotos.length) msg+='📸 Evidencia: '+fotos.length+' foto'+(fotos.length===1?'':'s')+' adjunta'+(fotos.length===1?'':'s')+(fotos.length?' (ver galería del celular)':'')+'\n';
+  msg+='_QR C-'+W+'_';
+
+  // ── Confirmación antes de enviar ──
+  var resumen='📋 Reporte listo para C-'+W+'\n👷 Recorredor: '+REC+'\n📅 '+now();
+  if(!confirm(resumen+'\n\n¿Confirmas el envío a WhatsApp?')) return;
+
+  // Registrar visita y abrir WhatsApp
+  agregarVisita(REC,W); mostrarContador(REC);
+  var n=getVisitas(REC).length;
+  showToast('✅ C-'+W+' registrado · '+REC+': '+n+(n===1?' pozo':' pozos'));
+  var waURL='https://wa.me/522293735876?text='+encodeURIComponent(msg);
+  // window.open funciona en laptop y celular
+  var win=window.open(waURL,'_blank');
+  // Fallback por si el navegador bloquea la ventana emergente
+  if(!win || win.closed || typeof win.closed==='undefined'){
+    location.href=waURL;
+  }
+}
+
+// ══ COORDENADAS DE POZOS (del archivo KMZ) ══
+var WELL_COORDS={
+  "111":{"lat":17.955585,"lon":-94.290644},
+  "119":{"lat":17.951957,"lon":-94.290633},
+  "125":{"lat":17.949996,"lon":-94.28748},
+  "126":{"lat":17.948477,"lon":-94.283855},
+  "131":{"lat":17.942921,"lon":-94.287424},
+  "139":{"lat":17.949487,"lon":-94.293166},
+  "143":{"lat":17.948364,"lon":-94.290616},
+  "191":{"lat":17.932098,"lon":-94.293902},
+  "216":{"lat":17.930508,"lon":-94.303067},
+  "317":{"lat":17.949492,"lon":-94.293162},
+  "321":{"lat":17.949567,"lon":-94.293113},
+  "324":{"lat":17.950096,"lon":-94.291806},
+  "327":{"lat":17.949503,"lon":-94.293165},
+  "328":{"lat":17.948319,"lon":-94.292835},
+  "331":{"lat":17.946386,"lon":-94.291549},
+  "356":{"lat":17.935541,"lon":-94.292094},
+  "358":{"lat":17.933787,"lon":-94.299699},
+  "359":{"lat":17.933735,"lon":-94.294918},
+  "363":{"lat":17.932146,"lon":-94.29818},
+  "364":{"lat":17.932029,"lon":-94.296024},
+  "365":{"lat":17.932246,"lon":-94.291417},
+  "367":{"lat":17.930632,"lon":-94.299201},
+  "368":{"lat":17.930291,"lon":-94.294737},
+  "502":{"lat":17.953095,"lon":-94.289472},
+  "503":{"lat":17.941089,"lon":-94.289633},
+  "504":{"lat":17.944593,"lon":-94.288543},
+  "506":{"lat":17.948591,"lon":-94.288546},
+  "507":{"lat":17.950248,"lon":-94.289521},
+  "508":{"lat":17.951789,"lon":-94.288523},
+  "513":{"lat":17.944592,"lon":-94.28627},
+  "603":{"lat":17.957717,"lon":-94.291701}
+};
+
+// ══ LOGIN ══
+var loginTarget='';
+var loggedIn=false;
+
+function requireLogin(target){
+  if(loggedIn){ switchView(target); return; }
+  loginTarget=target;
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginOverlay').classList.add('open');
+  setTimeout(function(){document.getElementById('loginUser').focus();},200);
+}
+
+function doLogin(){
+  var u=document.getElementById('loginUser').value.trim();
+  var p=document.getElementById('loginPass').value;
+  if(u==='Superintendente'&&p==='Lifting'){
+    loggedIn=true;
+    document.getElementById('loginOverlay').classList.remove('open');
+    switchView(loginTarget);
+  } else {
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('loginPass').value='';
+    document.getElementById('loginPass').focus();
+  }
+}
+
+function closeLogin(){
+  document.getElementById('loginOverlay').classList.remove('open');
+  loginTarget='';
+}
+
+// ══ MAPA LEAFLET ══
+function toDMS(deg, isLat){
+  var d=Math.floor(Math.abs(deg));
+  var mFull=(Math.abs(deg)-d)*60;
+  var m=Math.floor(mFull);
+  var s=((mFull-m)*60).toFixed(1);
+  var dir=isLat?(deg>=0?'N':'S'):(deg>=0?'E':'W');
+  return d+'° '+m+"' "+s+'" '+dir;
+}
+var leafletMap = null;
+var mapMarkers = {};
+var activeMapWell = null;
+
+function initLeafletMap(){
+  if(leafletMap) return; // already initialized
+
+  leafletMap = L.map('mapContainer', {
+    center: [17.945, -94.291],
+    zoom: 13,
+    zoomControl: true,
+    attributionControl: true
+  });
+
+  // Tile layer — OpenStreetMap (no API key needed)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(leafletMap);
+
+  // Custom marker icon
+  function makeIcon(color, active){
+    return L.divIcon({
+      className: '',
+      html: '<div style="width:'+(active?20:14)+'px;height:'+(active?20:14)+'px;'
+        +'background:'+color+';border-radius:50%;border:3px solid #fff;'
+        +'box-shadow:0 2px 8px rgba(0,0,0,.4);transition:all .3s"></div>',
+      iconAnchor: [active?10:7, active?10:7]
+    });
+  }
+
+  // Add all well markers
+  Object.keys(WELL_COORDS).forEach(function(num){
+    var c = WELL_COORDS[num];
+    var marker = L.marker([c.lat, c.lon], {
+      icon: makeIcon('#FF7A00', false),
+      title: 'C-'+num
+    }).addTo(leafletMap);
+
+    var popupHtml = '<div class="popup-title">C-'+num+'</div>'
+      +'<div class="popup-coord">'+c.lat.toFixed(6)+'°N, '+Math.abs(c.lon).toFixed(6)+'°W</div>'
+      +'<a class="popup-maps" href="https://maps.google.com/?q='+c.lat+','+c.lon
+      +'" target="_blank">🗺 Abrir en Google Maps</a>';
+
+    marker.bindPopup(popupHtml, {maxWidth: 220});
+    marker.on('click', function(){
+      selectMapWell(num);
+    });
+    mapMarkers[num] = {marker: marker, makeIcon: makeIcon};
+  });
+
+  // Fit map to all markers
+  var lats = Object.values(WELL_COORDS).map(function(c){return c.lat});
+  var lons = Object.values(WELL_COORDS).map(function(c){return c.lon});
+  leafletMap.fitBounds([
+    [Math.min.apply(null,lats)-0.005, Math.min.apply(null,lons)-0.005],
+    [Math.max.apply(null,lats)+0.005, Math.max.apply(null,lons)+0.005]
+  ]);
+}
+
+function selectMapWell(num){
+  // Reset previous active marker
+  if(activeMapWell && mapMarkers[activeMapWell]){
+    mapMarkers[activeMapWell].marker.setIcon(
+      L.divIcon({
+        className:'',
+        html:'<div style="width:14px;height:14px;background:#FF7A00;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>',
+        iconAnchor:[7,7]
+      })
+    );
+  }
+
+  activeMapWell = num;
+  var coord = WELL_COORDS[num];
+  if(!coord) return;
+
+  // Highlight selected marker
+  mapMarkers[num].marker.setIcon(
+    L.divIcon({
+      className:'',
+      html:'<div style="width:22px;height:22px;background:#0f3460;border-radius:50%;border:3px solid #FF7A00;box-shadow:0 3px 12px rgba(15,52,96,.6)"></div>',
+      iconAnchor:[11,11]
+    })
+  );
+
+  // Pan map to well
+  leafletMap.flyTo([coord.lat, coord.lon], 16, {animate:true, duration:1.2});
+  mapMarkers[num].marker.openPopup();
+
+  // Show info card
+  document.getElementById('mapWellName').textContent = 'C-'+num;
+  document.getElementById('mapLat').textContent = coord.lat.toFixed(6)+'°';
+  document.getElementById('mapLon').textContent = coord.lon.toFixed(6)+'°';
+  document.getElementById('mapDMS').textContent = toDMS(coord.lat,true)+' / '+toDMS(coord.lon,false);
+  document.getElementById('mapInfoCard').dataset.lat = coord.lat;
+  document.getElementById('mapInfoCard').dataset.lon = coord.lon;
+  document.getElementById('mapInfoCard').classList.add('show');
+
+  // Highlight chip
+  document.querySelectorAll('.chip').forEach(function(c){c.style.background='';c.style.color='';c.style.borderColor=''});
+  var chip = document.getElementById('chip-'+num);
+  if(chip){chip.style.background='var(--accent)';chip.style.color='#fff';chip.style.borderColor='var(--accent)';}
+}
+
+function buscarPozo(){
+  var q = document.getElementById('mapSearchInput').value.trim().replace(/[^0-9]/g,'');
+  if(!q) return;
+  if(WELL_COORDS[q]){
+    selectMapWell(q);
+  } else {
+    // Well exists but no coords — show message
+    document.getElementById('mapWellName').textContent = 'C-'+q+' — Sin coordenadas en KMZ';
+    document.getElementById('mapLat').textContent = 'No disponible';
+    document.getElementById('mapLon').textContent = 'No disponible';
+    document.getElementById('mapDMS').textContent = '—';
+    document.getElementById('mapInfoCard').classList.add('show');
+  }
+}
+
+function abrirEnMaps(){
+  var card = document.getElementById('mapInfoCard');
+  var lat = card.dataset.lat, lon = card.dataset.lon;
+  if(lat && lon) window.open('https://maps.google.com/?q='+lat+','+lon,'_blank');
+}
+
+function initMapChips(){
+  var chips = document.getElementById('mapChips');
+  chips.innerHTML = WELLS.map(function(w){
+    var hasCoord = !!WELL_COORDS[w];
+    return '<span id="chip-'+w+'" class="chip'+(hasCoord?'':' no-coord')+'" '
+      +(hasCoord?'onclick="chipSelect(\''+w+'\')" ':'')
+      +'title="'+(hasCoord?'Ver en mapa':'Sin coordenadas')+'">C-'+w+(hasCoord?' 📍':'')+'</span>';
+  }).join('');
+
+  // Init map after small delay so container is visible
+  setTimeout(function(){
+    initLeafletMap();
+    setTimeout(function(){leafletMap.invalidateSize();},300);
+  }, 150);
+}
+
+function chipSelect(w){
+  document.getElementById('mapSearchInput').value = w;
+  selectMapWell(w);
+  document.getElementById('mapContainer').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+
+
+
+function renderWellList(wells){
+  document.getElementById('wellList').innerHTML=wells.map(function(w){
+    return '<div class="well-item" id="wi-'+w+'" onclick="selectWell(\''+w+'\')">'+
+      '<div style="display:flex;align-items:center;gap:12px">'+
+      '<svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg">'+
+      '<polygon points="16,2 3,30 29,30" fill="none" stroke="var(--accent2)" stroke-width="2"/>'+
+      '<line x1="3" y1="30" x2="29" y2="30" stroke="var(--accent2)" stroke-width="2.5"/>'+
+      '<line x1="7" y1="23" x2="25" y2="23" stroke="var(--border)" stroke-width="1.2"/>'+
+      '<line x1="10" y1="17" x2="22" y2="17" stroke="var(--border)" stroke-width="1.2"/>'+
+      '<circle cx="16" cy="3" r="2" fill="#FF7A00" opacity=".8"/></svg>'+
+      '<div><div class="well-num">C-'+w+'</div>'+
+      '<div style="font-size:11px;color:var(--txt2);margin-top:1px">Pozo Cuichapa '+w+'</div>'+
+      '</div></div>'+
+      '<svg viewBox="0 0 20 20" width="16" height="16" xmlns="http://www.w3.org/2000/svg">'+
+      '<path d="M7 4 L13 10 L7 16" stroke="var(--txt2)" stroke-width="2" fill="none" stroke-linecap="round"/>'+
+      '</svg></div>';
+  }).join('');
+}
+
+function filtrarPozos(){
+  var q=document.getElementById('wellSearch').value.replace(/[^0-9]/g,'');
+  var filtered=q?WELLS.filter(function(w){return w.includes(q)}):WELLS;
+  renderWellList(filtered);
+  if(selectedWell&&!filtered.includes(selectedWell)){selectedWell=null;document.getElementById('enterBtn').style.display='none';}
+}
+
+function selectWell(w){
+  selectedWell=w;
+  document.getElementById('pozoTitle').textContent='C-'+w;
+  cargarInfoPozo(w);
+  switchView('pozo');
+}
+
+function entrarPozo(){
+  if(!selectedWell) return;
+  document.getElementById('pozoTitle').textContent='C-'+selectedWell;
+  cargarInfoPozo(selectedWell);
+  switchView('pozo');
+}
+
+function getPozoKey(w){return 'pozoinfo_'+w;}
+function getPozoInfo(w){try{var d=localStorage.getItem(getPozoKey(w));return d?JSON.parse(d):{};}catch(e){return {};}}
+
+function cargarInfoPozo(w){
+  var info=getPozoInfo(w);
+  function set(id,val){
+    var el=document.getElementById(id);if(!el)return;
+    if(val){el.textContent=val;el.className='info-value';}
+    else{el.textContent='Por definir';el.className='info-value empty';}
+  }
+  set('pi-lat',info.lat);set('pi-lon',info.lon);set('pi-area',info.area);
+  set('pi-valvula',info.valvula);set('pi-valvula-size',info.valvulaSize);set('pi-valvula-estado',info.valvulaEstado);
+  set('pi-bombeo',info.bombeo);set('pi-bombeo-modelo',info.bombeoModelo);set('pi-bombeo-cap',info.bombeoCap);
+  set('pi-fractank',info.fractank);set('pi-fractank-cap',info.fractankCap);
+  set('pi-mecanico',info.mecanico);set('pi-mecanico-fecha',info.mecanicoFecha);set('pi-mecanico-obs',info.mecanicoObs);
+  set('pi-quimicos',info.quimicos);set('pi-quimicos-tipo',info.quimicosTipo);set('pi-quimicos-dosis',info.quimicosDosis);
+}
+
+function editarInfo(seccion){
+  if(!selectedWell){alert('Sin pozo seleccionado');return;}
+  var info=getPozoInfo(selectedWell);
+  var campos={
+    ubicacion:[{key:'lat',label:'Latitud'},{key:'lon',label:'Longitud'},{key:'area',label:'Área / Batería'}],
+    valvulas:[{key:'valvula',label:'Tipo de válvula'},{key:'valvulaSize',label:'Tamaño'},{key:'valvulaEstado',label:'Estado'}],
+    bombeo:[{key:'bombeo',label:'Tipo de bombeo (BN/BM/FY)'},{key:'bombeoModelo',label:'Modelo / Marca'},{key:'bombeoCap',label:'Capacidad'}],
+    fractank:[{key:'fractank',label:'¿Hay Frac Tank? (Sí/No)'},{key:'fractankCap',label:'Capacidad en BLS'}],
+    mecanico:[{key:'mecanico',label:'Estado general'},{key:'mecanicoFecha',label:'Último mantenimiento (fecha)'},{key:'mecanicoObs',label:'Observaciones mecánicas'}],
+    quimicos:[{key:'quimicos',label:'¿Hay inyección de químicos? (Sí/No)'},{key:'quimicosTipo',label:'Tipo de químico'},{key:'quimicosDosis',label:'Dosis / Frecuencia'}],
+  };
+  var c=campos[seccion];if(!c)return;
+  c.forEach(function(campo){
+    var nuevo=prompt(campo.label+'\nPozo C-'+selectedWell, info[campo.key]||'');
+    if(nuevo!==null) info[campo.key]=nuevo.trim();
+  });
+  try{localStorage.setItem(getPozoKey(selectedWell),JSON.stringify(info));}catch(e){}
+  cargarInfoPozo(selectedWell);
+  showToast('✅ Información guardada para C-'+selectedWell);
+}
+
+// ══ INIT ══
+var WELLS=['19','106','119','128','139','167','172','179','187','191','197','201',
+  '213','224','324','326','327','342','346','350','352','356','359','363',
+  '364','367','373','376','385','500','502','504','505','601','602','603'];
+var selectedWell=null;
+
+function switchView(id){
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
+  document.querySelectorAll('.sidebar-icon').forEach(function(i){i.classList.remove('active')});
+  var el=document.getElementById('view-'+id);
+  if(el) el.classList.add('active');
+  if(id==='visitas'){
+    var ic=document.getElementById('icon-visitas');
+    if(ic) ic.classList.add('active');
+  } else if(id==='catalogo'){
+    var ic=document.getElementById('icon-catalogo');
+    if(ic) ic.classList.add('active');
+    renderWellList(WELLS);
+    selectedWell=null;
+    var btn=document.getElementById('enterBtn');
+    if(btn) btn.style.display='none';
+  } else if(id==='pozo'){
+    var ic=document.getElementById('icon-catalogo');
+    if(ic) ic.classList.add('active');
+  } else if(id==='mapa'){
+    var ic=document.getElementById('icon-mapa');
+    if(ic) ic.classList.add('active');
+    initMapChips();
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+renderWellList(WELLS);
+
+// ══ PWA SERVICE WORKER ══
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+
+// ══ INSTALL BANNER ══
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault(); deferredPrompt=e;
+  if(!window.matchMedia('(display-mode: standalone)').matches){
+    var dismissed=false;
+    try{dismissed=localStorage.getItem('pwa_dismissed')==='1';}catch(e2){}
+    if(!dismissed) document.getElementById('installBanner').classList.add('show');
+  }
+});
+function instalarPWA(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function(){deferredPrompt=null;cerrarBanner();});
+}
+function cerrarBanner(){
+  document.getElementById('installBanner').classList.remove('show');
+  try{localStorage.setItem('pwa_dismissed','1');}catch(e){}
+}
+
+// ══ WELL PICKER — acceso directo sin QR ══
+(function initPicker(){
+  if(W!=='???') return;
+  var picker=document.getElementById('wellPicker');
+  if(picker) picker.classList.add('show');
+  var sugg=document.getElementById('wpSuggestions');
+  if(!sugg) return;
+  var recents=[];
+  try{recents=JSON.parse(localStorage.getItem('recent_wells')||'[]');}catch(e){}
+  var list=recents.length ? recents.slice(0,8)
+    : ['106','119','139','191','324','342','352','367','385','603'];
+  var label=recents.length?'Recientes:':'Pozos del campo:';
+  sugg.innerHTML='<span style="font-size:11px;color:var(--txt2);width:100%">'+label+'</span>'
+    +list.map(function(w){
+      return '<span class="wp-chip" onclick="setWellFromPicker(\''+w+'\')">C-'+w+'</span>';
+    }).join('');
+})();
+
+function confirmarPozo(){
+  var val=document.getElementById('wpInput').value.trim();
+  if(!val||isNaN(val)){alert('Escribe un número de pozo válido');return;}
+  setWellFromPicker(val);
+}
+
+function setWellFromPicker(num){
+  W=String(parseInt(num));
+  document.getElementById('wellTitle').textContent='C-'+W;
+  document.title='C-'+W+' · Cuichapa';
+  try{
+    var r=JSON.parse(localStorage.getItem('recent_wells')||'[]');
+    r=r.filter(function(w){return w!==W});r.unshift(W);
+    localStorage.setItem('recent_wells',JSON.stringify(r.slice(0,10)));
+  }catch(e){}
+  var picker=document.getElementById('wellPicker');
+  if(picker){
+    picker.style.transition='opacity .3s';picker.style.opacity='0';
+    setTimeout(function(){picker.classList.remove('show');picker.style.opacity='';},300);
+  }
+  showToast('✅ Pozo C-'+W+' seleccionado');
+}
+
+// iOS install instructions
+(function(){
+  var isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  var dismissed=false;
+  try{dismissed=localStorage.getItem('pwa_dismissed')==='1';}catch(e){}
+  if(isIOS&&!isStandalone&&!dismissed){
+    var banner=document.getElementById('installBanner');
+    banner.querySelector('strong').textContent='📲 Instalar en iPhone/iPad';
+    banner.querySelector('span').textContent='Toca Compartir ↑ → "Agregar a pantalla de inicio"';
+    var btn=document.getElementById('installBtn');
+    btn.textContent='Entendido'; btn.onclick=cerrarBanner;
+    banner.classList.add('show');
+  }
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+</body>
+</html>
