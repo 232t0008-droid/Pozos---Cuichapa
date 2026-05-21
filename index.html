@@ -2118,43 +2118,51 @@ function getPendientes(){
 
 // ── Enviar a WhatsApp ─────────────────────────────
 var envioEnCurso = false;
+
 function intentarEnviar(id){
-  if(envioEnCurso || !navigator.onLine) return;
   var r = getReporte(id);
-  if(!r || r.estado==='enviado') return;
-  envioEnCurso = true;
+  if(!r) return;
+  if(r.estado === 'enviado'){
+    showToast('✅ Este reporte ya fue enviado');
+    return;
+  }
+  // Actualizar intento
   actualizarEstadoReporte(id, 'pendiente', new Date().toISOString());
   renderHistorial();
-  var waURL = 'https://api.whatsapp.com/send?phone=522293735876&text='+encodeURIComponent(r.msg);
+  // Abrir WhatsApp directamente — número México +52 2293735876
+  var waURL = 'https://api.whatsapp.com/send?phone=522293735876&text=' + encodeURIComponent(r.msg);
+  // Marcar como enviado (el usuario ve el msg listo en WA y solo toca enviar)
+  actualizarEstadoReporte(id, 'enviado', new Date().toISOString());
+  actualizarBadgeHistorial();
+  renderHistorial();
   location.href = waURL;
-  // Marcar como enviado tras 3s (si WhatsApp abrió OK)
-  setTimeout(function(){
-    actualizarEstadoReporte(id, 'enviado', new Date().toISOString());
-    envioEnCurso = false;
-    actualizarBadgeHistorial();
-    renderHistorial();
-  }, 3000);
 }
 
-// ── Reintentar toda la cola ───────────────────────
 function procesarCola(){
-  if(!navigator.onLine) return;
   var pendientes = getPendientes();
-  if(!pendientes.length) return;
-  // Notificación interna
-  showToast('📶 Señal detectada · Enviando '+pendientes.length+' reporte'+(pendientes.length>1?'s':'')+'...');
-  // Enviar el primero (los siguientes se enviarán en las próximas revisiones)
-  setTimeout(function(){ intentarEnviar(pendientes[0].id); }, 1500);
+  if(!pendientes.length){
+    showToast('✅ Sin reportes pendientes');
+    return;
+  }
+  showToast('📤 Abriendo WhatsApp con '+pendientes.length+' reporte'+(pendientes.length>1?'s':'')+'...');
+  // Enviar el primero de la cola
+  intentarEnviar(pendientes[0].id);
 }
 
 // ── Revisión periódica cada 30 segundos ──────────
 setInterval(function(){
-  if(navigator.onLine && getPendientes().length) procesarCola();
+  if(getPendientes().length){
+    showToast('📶 Reintentando envío de reportes pendientes...');
+    procesarCola();
+  }
 }, 30000);
 
 // ── Detección inmediata de señal ─────────────────
 window.addEventListener('online', function(){
-  setTimeout(procesarCola, 800);
+  if(getPendientes().length){
+    showToast('📶 Señal recuperada · Enviando reportes pendientes...');
+    setTimeout(procesarCola, 1000);
+  }
 });
 window.addEventListener('offline', function(){
   showToast('⚠️ Sin señal — los reportes se guardarán localmente');
@@ -2183,20 +2191,16 @@ function confirmarEnvio(){
   actualizarBadgeHistorial();
 
   if(navigator.onLine){
-    // Intentar enviar ahora
-    actualizarEstadoReporte(reporte.id, 'pendiente', ahora);
+    // Marcar enviado y abrir WhatsApp
+    actualizarEstadoReporte(reporte.id, 'enviado', ahora);
     var waURL='https://api.whatsapp.com/send?phone=522293735876&text='+encodeURIComponent(msgPendiente);
-    location.href = waURL;
-    // Asumir éxito tras 3s (WhatsApp abrió)
-    setTimeout(function(){
-      actualizarEstadoReporte(reporte.id, 'enviado', new Date().toISOString());
-      actualizarBadgeHistorial();
-      mostrarResultado(true, n, true);
-    }, 3000);
+    actualizarBadgeHistorial();
+    mostrarResultado(true, n, true);
+    setTimeout(function(){ location.href = waURL; }, 800);
   } else {
-    // Sin señal — queda en cola automáticamente
+    // Sin señal — queda pendiente, se enviará automático
     mostrarResultado(true, n, false);
-    showToast('💾 Reporte guardado · Se enviará cuando haya señal');
+    showToast('💾 Guardado · Se enviará cuando haya señal');
   }
 }
 
