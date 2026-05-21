@@ -591,6 +591,8 @@ body.night .chk-row.on{background:#052e1640}
 .result-back{padding:14px 32px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif}
 
 </style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -1569,35 +1571,103 @@ getCicloInfo = function(nombre){
 };
 
 // ══ FOTOS ══
+// ══ FOTOS CON COMPRESIÓN ══
+var fotos = []; // [{data: base64, nombre, size}]
+var FOTOS_KEY = 'cuichapa_fotos_temp';
+
+// Restaurar fotos del turno actual si la app se recargó
+(function(){
+  try{
+    var saved = JSON.parse(localStorage.getItem(FOTOS_KEY)||'[]');
+    if(saved.length){ fotos = saved; renderFotos(); }
+  }catch(e){}
+})();
+
+function comprimirImagen(file, callback){
+  var maxW = 1280, maxH = 1280, quality = 0.72;
+  var reader = new FileReader();
+  reader.onerror = function(){ callback(null); };
+  reader.onload = function(ev){
+    var img = new Image();
+    img.onerror = function(){ callback(null); };
+    img.onload = function(){
+      var w = img.width, h = img.height;
+      if(w > maxW || h > maxH){
+        var ratio = Math.min(maxW/w, maxH/h);
+        w = Math.round(w*ratio); h = Math.round(h*ratio);
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var data = canvas.toDataURL('image/jpeg', quality);
+      callback(data);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function agregarFotos(e){
   var files = Array.from(e.target.files);
+  if(!files.length) return;
+
+  // Mostrar indicador de carga
+  var count = document.getElementById('fotoCount');
+  if(count) count.textContent = '⏳ Procesando '+files.length+' foto'+(files.length>1?'s':'')+'...';
+
+  var procesadas = 0;
   files.forEach(function(file){
-    var reader = new FileReader();
-    reader.onload = function(ev){
-      fotos.push(ev.target.result);
-      renderFotos();
-    };
-    reader.readAsDataURL(file);
+    // Solo imágenes
+    if(!file.type.startsWith('image/')){ procesadas++; return; }
+    comprimirImagen(file, function(data){
+      procesadas++;
+      if(data){
+        fotos.push({ data: data, nombre: file.name, size: data.length });
+        // Guardar en localStorage para persistencia
+        try{ localStorage.setItem(FOTOS_KEY, JSON.stringify(fotos)); }catch(ex){
+          // Si está lleno, quitar la última foto antigua
+          if(fotos.length > 1){ fotos.shift(); }
+        }
+      }
+      if(procesadas === files.length) renderFotos();
+    });
   });
-  e.target.value = '';
+  e.target.value = ''; // reset input para permitir subir mismo archivo
 }
 
 function borrarFoto(idx){
   fotos.splice(idx, 1);
+  try{ localStorage.setItem(FOTOS_KEY, JSON.stringify(fotos)); }catch(e){}
+  renderFotos();
+}
+
+function limpiarFotos(){
+  fotos = [];
+  try{ localStorage.removeItem(FOTOS_KEY); }catch(e){}
   renderFotos();
 }
 
 function renderFotos(){
-  var prev = document.getElementById('fotoPreviews');
+  var prev  = document.getElementById('fotoPreviews');
   var count = document.getElementById('fotoCount');
-  prev.innerHTML = fotos.map(function(src, i){
+  if(!prev) return;
+  if(!fotos.length){
+    prev.innerHTML  = '';
+    if(count) count.textContent = '';
+    return;
+  }
+  prev.innerHTML = fotos.map(function(f, i){
+    var src = f.data || f; // compatibilidad con versión anterior
     return '<div class="foto-thumb-wrap">'
-      +'<img src="'+src+'" alt="foto '+(i+1)+'">'
+      +'<img src="'+src+'" alt="foto '+(i+1)+'" '
+      +'style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid var(--border)">'
       +'<button class="foto-del" onclick="borrarFoto('+i+')">✕</button>'
       +'</div>';
   }).join('');
-  count.textContent = fotos.length ? '📸 '+fotos.length+' foto'+(fotos.length===1?'':'s')+' adjunta'+(fotos.length===1?'':'s') : '';
+  if(count) count.textContent = '📸 '+fotos.length+' foto'+(fotos.length===1?'':'s')+' lista'+(fotos.length===1?'':'s');
 }
+
 
 
 var msgPendiente = '';
@@ -1675,6 +1745,8 @@ function confirmarEnvio(){
   mostrarContador(REC);
   var n = getVisitas(REC).length;
   actualizarBadgeHistorial();
+  // Limpiar fotos del turno
+  limpiarFotos();
   // Mostrar pantalla de éxito inmediatamente
   mostrarResultado(true, n, navigator.onLine);
   // Enviar silencioso con Ultramsg
@@ -2077,6 +2149,106 @@ renderWellList(WELLS);
 var HIST_KEY  = 'cuichapa_historial_v2';
 var histFiltro = 'todos';
 
+// ── Firebase — Historial Centralizado ─────────────
+var FB_CONFIG = {
+  databaseURL: 'https://pozos-cuichapa-default-rtdb.firebaseio.com'
+};
+var fbApp = null;
+var fbDB  = null;
+
+function initFirebase(){
+  try{
+    if(!firebase || fbApp) return;
+    fbApp = firebase.initializeApp(FB_CONFIG);
+    fbDB  = firebase.database(fbApp);
+    console.log('Firebase conectado ✅');
+    // Sincronizar reportes locales pendientes a Firebase
+    sincronizarAFirebase();
+    // Escuchar cambios en Firebase (historial en tiempo real)
+    escucharFirebase();
+  } catch(e){ console.warn('Firebase no disponible:', e); }
+}
+
+// Guardar reporte en Firebase
+function guardarEnFirebase(reporte){
+  if(!fbDB) return;
+  try{
+    fbDB.ref('reportes/' + reporte.id).set({
+      id:           reporte.id,
+      fecha:        reporte.fecha,
+      pozo:         reporte.pozo,
+      recorredor:   reporte.recorredor,
+      msg:          reporte.msg,
+      estado:       reporte.estado,
+      ultimoIntento:reporte.ultimoIntento || null,
+      intentos:     reporte.intentos || 0
+    });
+  } catch(e){}
+}
+
+// Actualizar estado en Firebase
+function actualizarEstadoFirebase(id, estado, ultimoIntento){
+  if(!fbDB) return;
+  try{
+    fbDB.ref('reportes/' + id).update({
+      estado: estado,
+      ultimoIntento: ultimoIntento || new Date().toISOString(),
+      intentos: (getReporte(id) || {}).intentos || 0
+    });
+  } catch(e){}
+}
+
+// Sincronizar locales → Firebase (al recuperar señal)
+function sincronizarAFirebase(){
+  if(!fbDB) return;
+  var locales = getHistorial();
+  locales.forEach(function(r){
+    guardarEnFirebase(r);
+  });
+}
+
+// Escuchar Firebase → actualizar local en tiempo real
+function escucharFirebase(){
+  if(!fbDB) return;
+  fbDB.ref('reportes').on('value', function(snapshot){
+    var data = snapshot.val();
+    if(!data) return;
+    var remotos = Object.values(data);
+    // Merge: actualizar estado de reportes locales con lo que dice Firebase
+    var locales = getHistorial();
+    var localMap = {};
+    locales.forEach(function(r){ localMap[r.id] = r; });
+    remotos.forEach(function(r){
+      if(localMap[r.id]){
+        // Actualizar estado si Firebase dice enviado
+        if(r.estado === 'enviado' && localMap[r.id].estado !== 'enviado'){
+          localMap[r.id].estado = 'enviado';
+          localMap[r.id].ultimoIntento = r.ultimoIntento;
+        }
+      } else {
+        // Reporte de otro dispositivo — agregar al local
+        locales.push(r);
+      }
+    });
+    // Ordenar por fecha desc
+    locales.sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
+    saveHistorial(locales);
+    renderHistorial();
+    actualizarBadgeHistorial();
+  }, function(err){ console.warn('Firebase read error:', err); });
+}
+
+// Inicializar Firebase cuando cargue la app
+window.addEventListener('load', function(){
+  setTimeout(initFirebase, 1000);
+});
+// Re-intentar conexión Firebase cuando vuelva señal
+window.addEventListener('online', function(){
+  if(!fbDB) setTimeout(initFirebase, 1000);
+  else sincronizarAFirebase();
+});
+
+
 // ── Storage ──────────────────────────────────────
 function getHistorial(){
   try{ return JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }
@@ -2092,13 +2264,15 @@ function getReporte(id){
 
 // ── Guardar (SIEMPRE, primero) ────────────────────
 function guardarReporte(reporte){
-  // reporte = { id, fecha, pozo, recorredor, msg, estado, ultimoIntento, intentos }
   var arr = getHistorial();
-  var idx = arr.findIndex(function(r){ return r.id===reporte.id; });
-  if(idx >= 0) arr[idx] = reporte;   // actualizar si ya existe
-  else arr.unshift(reporte);          // nuevo al principio
+  var idx = -1;
+  for(var i=0;i<arr.length;i++){ if(arr[i].id===reporte.id){ idx=i; break; } }
+  if(idx >= 0) arr[idx] = reporte;
+  else arr.unshift(reporte);
   if(arr.length > 500) arr = arr.slice(0, 500);
   saveHistorial(arr);
+  // Sincronizar a Firebase si hay señal
+  if(fbDB) guardarEnFirebase(reporte);
 }
 
 // ── Actualizar estado de un reporte ──────────────
@@ -2109,6 +2283,8 @@ function actualizarEstadoReporte(id, estado, ultimoIntento){
       arr[i].estado = estado;
       arr[i].ultimoIntento = ultimoIntento || new Date().toISOString();
       if(estado==='pendiente') arr[i].intentos = (arr[i].intentos||0) + 1;
+      // Sincronizar estado a Firebase
+      if(fbDB) actualizarEstadoFirebase(id, estado, arr[i].ultimoIntento);
       break;
     }
   }
@@ -2194,27 +2370,69 @@ function procesarCola(){
   enviarSiguiente();
 }
 
-// ── Revisión periódica cada 30 segundos ──────────
-setInterval(function(){
-  if(getPendientes().length){
-    showToast('📶 Reintentando envío de reportes pendientes...');
-    procesarCola();
-  }
-}, 30000);
-
-// ── Detección inmediata de señal ─────────────────
+// ══ DETECCIÓN DE SEÑAL — MULTI-MÉTODO ══════════════
+// Método 1: evento nativo online/offline
 window.addEventListener('online', function(){
-  if(getPendientes().length){
-    showToast('📶 Señal recuperada · Enviando reportes pendientes...');
-    setTimeout(procesarCola, 1000);
-  }
+  verificarYEnviar();
 });
 window.addEventListener('offline', function(){
-  showToast('⚠️ Sin señal — los reportes se guardarán localmente');
   actualizarBadgeHistorial();
 });
 
-// ── Confirmar envío (llamado desde modal) ─────────
+// Método 2: verificación activa contra servidor
+function verificarConectividad(callback){
+  // Ping a un endpoint confiable con timeout de 5s
+  var ctrl = null;
+  var timeout = null;
+  try{
+    ctrl = new AbortController();
+    timeout = setTimeout(function(){ ctrl.abort(); }, 5000);
+    fetch('https://api.ultramsg.com/instance176718/instance/status'
+      +'?token=qgzhdd47v5b7xv4e', { method:'GET', signal: ctrl.signal })
+    .then(function(r){
+      clearTimeout(timeout);
+      callback(r.ok || r.status < 500);
+    })
+    .catch(function(){
+      clearTimeout(timeout);
+      callback(false);
+    });
+  }catch(e){
+    if(timeout) clearTimeout(timeout);
+    callback(false);
+  }
+}
+
+function verificarYEnviar(){
+  var pendientes = getPendientes();
+  if(!pendientes.length) return;
+  verificarConectividad(function(haySenal){
+    if(haySenal){
+      procesarCola();
+      // También sincronizar a Firebase
+      if(fbDB) sincronizarAFirebase();
+    }
+    actualizarBadgeHistorial();
+  });
+}
+
+// Método 3: revisión periódica cada 30s
+setInterval(function(){
+  if(getPendientes().length) verificarYEnviar();
+}, 30000);
+
+// Método 4: revisión al volver a la app (visibilidad)
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible' && getPendientes().length){
+    setTimeout(verificarYEnviar, 1500);
+  }
+});
+
+// Método 5: al cargar la app con pendientes
+setTimeout(function(){
+  if(getPendientes().length) verificarYEnviar();
+}, 3000);
+
 function confirmarEnvio(){
   document.getElementById('confirmOverlay').classList.remove('open');
   var ahora = new Date().toISOString();
@@ -2370,16 +2588,9 @@ function actualizarBadgeHistorial(){
   }
 }
 
-// ── Arrancar sistema al cargar ────────────────────
+// Arrancar badge y revisión periódica
 actualizarBadgeHistorial();
 setInterval(actualizarBadgeHistorial, 5000);
-// Procesar cola al abrir la app (reportes del turno anterior)
-setTimeout(function(){
-  if(navigator.onLine && getPendientes().length){
-    showToast('📶 Procesando '+getPendientes().length+' reporte'+(getPendientes().length>1?'s':'')+' pendiente'+(getPendientes().length>1?'s':'')+'...');
-    setTimeout(procesarCola, 2000);
-  }
-}, 3000);
 
 // ══ PWA SERVICE WORKER ══
 if('serviceWorker' in navigator){
