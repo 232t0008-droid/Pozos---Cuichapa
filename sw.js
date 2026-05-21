@@ -1,5 +1,5 @@
 // Service Worker — Campo Cuichapa PWA
-const CACHE = 'cuichapa-v3';
+const CACHE = 'cuichapa-v4';
 const ASSETS = [
   '/Pozos---Cuichapa/',
   '/Pozos---Cuichapa/index.html',
