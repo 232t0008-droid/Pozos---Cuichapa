@@ -1729,12 +1729,14 @@ function cerrarConfirmacion(){
 
 function confirmarEnvio(){
   document.getElementById('confirmOverlay').classList.remove('open');
+  var ahora = new Date().toISOString();
   var reporte = {
     id: Date.now(),
-    fecha: new Date().toISOString(),
+    fecha: ahora,
     pozo: W,
     recorredor: REC,
     msg: msgPendiente,
+    fotos: fotos.map(function(f){ return {data:(f.data||f), nombre:(f.nombre||'')}; }),
     estado: 'pendiente',
     ultimoIntento: null,
     intentos: 0
@@ -2158,31 +2160,32 @@ var fbDB  = null;
 
 function initFirebase(){
   try{
-    if(!firebase || fbApp) return;
+    if(typeof firebase === 'undefined') return;
+    if(fbApp){ escucharFirebase(); return; }
     fbApp = firebase.initializeApp(FB_CONFIG);
     fbDB  = firebase.database(fbApp);
-    console.log('Firebase conectado ✅');
-    // Sincronizar reportes locales pendientes a Firebase
+    // Configurar reglas de acceso
     sincronizarAFirebase();
-    // Escuchar cambios en Firebase (historial en tiempo real)
     escucharFirebase();
-  } catch(e){ console.warn('Firebase no disponible:', e); }
+  } catch(e){ console.warn('Firebase:', e); }
 }
 
 // Guardar reporte en Firebase
 function guardarEnFirebase(reporte){
-  if(!fbDB) return;
+  if(!fbDB || !reporte.id) return;
   try{
+    // No subir fotos a Firebase (muy pesadas) — solo metadata
     fbDB.ref('reportes/' + reporte.id).set({
-      id:           reporte.id,
-      fecha:        reporte.fecha,
-      pozo:         reporte.pozo,
-      recorredor:   reporte.recorredor,
-      msg:          reporte.msg,
-      estado:       reporte.estado,
-      ultimoIntento:reporte.ultimoIntento || null,
-      intentos:     reporte.intentos || 0
-    });
+      id:            reporte.id,
+      fecha:         reporte.fecha,
+      pozo:          reporte.pozo,
+      recorredor:    reporte.recorredor,
+      msg:           reporte.msg,
+      nFotos:        (reporte.fotos||[]).length,
+      estado:        reporte.estado,
+      ultimoIntento: reporte.ultimoIntento || null,
+      intentos:      reporte.intentos || 0
+    }).catch(function(e){ console.warn('FB write:', e); });
   } catch(e){}
 }
 
@@ -2210,32 +2213,33 @@ function sincronizarAFirebase(){
 // Escuchar Firebase → actualizar local en tiempo real
 function escucharFirebase(){
   if(!fbDB) return;
-  fbDB.ref('reportes').on('value', function(snapshot){
+  // Evitar múltiples listeners
+  try{ fbDB.ref('reportes').off('value'); }catch(e){}
+  fbDB.ref('reportes').orderByChild('fecha').on('value', function(snapshot){
     var data = snapshot.val();
     if(!data) return;
     var remotos = Object.values(data);
-    // Merge: actualizar estado de reportes locales con lo que dice Firebase
-    var locales = getHistorial();
-    var localMap = {};
-    locales.forEach(function(r){ localMap[r.id] = r; });
+    var locales  = getHistorial();
+    // Mapa por ID para merge sin duplicados
+    var mapa = {};
+    locales.forEach(function(r){ mapa[r.id] = r; });
     remotos.forEach(function(r){
-      if(localMap[r.id]){
-        // Actualizar estado si Firebase dice enviado
-        if(r.estado === 'enviado' && localMap[r.id].estado !== 'enviado'){
-          localMap[r.id].estado = 'enviado';
-          localMap[r.id].ultimoIntento = r.ultimoIntento;
-        }
+      if(!r || !r.id) return;
+      if(mapa[r.id]){
+        // Actualizar estado si Firebase tiene info más reciente
+        if(r.estado === 'enviado') mapa[r.id].estado = 'enviado';
+        if(r.ultimoIntento) mapa[r.id].ultimoIntento = r.ultimoIntento;
       } else {
-        // Reporte de otro dispositivo — agregar al local
-        locales.push(r);
+        // Reporte de otro dispositivo — sin fotos (no se guardan en Firebase)
+        mapa[r.id] = r;
       }
     });
-    // Ordenar por fecha desc
-    locales.sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
-    saveHistorial(locales);
+    var merged = Object.values(mapa);
+    merged.sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
+    saveHistorial(merged);
     renderHistorial();
     actualizarBadgeHistorial();
-  }, function(err){ console.warn('Firebase read error:', err); });
+  }, function(err){ console.warn('Firebase escuchar error:', err); });
 }
 
 // Inicializar Firebase cuando cargue la app
@@ -2298,46 +2302,78 @@ function getPendientes(){
 
 // ── Enviar a WhatsApp ─────────────────────────────
 // ── Configuración Ultramsg ────────────────────────
-var UM_INSTANCE = 'instance176718';
-var UM_TOKEN    = 'qgzhdd47v5b7xv4e';
-var UM_TO       = '+522293735876';
-var UM_URL      = 'https://api.ultramsg.com/' + UM_INSTANCE + '/messages/chat';
+var UM_INSTANCE  = 'instance176718';
+var UM_TOKEN     = 'qgzhdd47v5b7xv4e';
+var UM_TO        = '+522293735876';
+var UM_BASE      = 'https://api.ultramsg.com/' + UM_INSTANCE;
+var UM_URL       = UM_BASE + '/messages/chat';
+var UM_URL_IMG   = UM_BASE + '/messages/image';
 
-// ── Enviar silencioso con Ultramsg ────────────────
+// ── Enviar texto por Ultramsg ─────────────────────
+function umSendText(texto, callback){
+  var body = 'token=' + encodeURIComponent(UM_TOKEN)
+           + '&to='   + encodeURIComponent(UM_TO)
+           + '&body=' + encodeURIComponent(texto);
+  fetch(UM_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: body
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if(callback) callback(!!(d && (d.sent==='true'||d.sent===true))); })
+  .catch(function(){ if(callback) callback(false); });
+}
+
+// ── Enviar imagen por Ultramsg (base64) ───────────
+function umSendImage(base64, caption, callback){
+  // Quitar prefijo data:image/jpeg;base64,
+  var imgData = base64.replace(/^data:image\/[a-z]+;base64,/, '');
+  var body = 'token='   + encodeURIComponent(UM_TOKEN)
+           + '&to='     + encodeURIComponent(UM_TO)
+           + '&image='  + encodeURIComponent(imgData)
+           + '&caption='+ encodeURIComponent(caption||'');
+  fetch(UM_URL_IMG, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: body
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if(callback) callback(!!(d && (d.sent==='true'||d.sent===true))); })
+  .catch(function(){ if(callback) callback(false); });
+}
+
+// ── Envío completo: texto + fotos ────────────────
 function enviarConUltramsg(id, callback){
   var r = getReporte(id);
   if(!r){ if(callback) callback(false); return; }
   if(r.estado === 'enviado'){ if(callback) callback(true); return; }
 
-  var body = 'token=' + encodeURIComponent(UM_TOKEN)
-           + '&to='    + encodeURIComponent(UM_TO)
-           + '&body='  + encodeURIComponent(r.msg);
-
-  fetch(UM_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body
-  })
-  .then(function(res){ return res.json(); })
-  .then(function(data){
-    // Ultramsg devuelve { sent: "true" } o { error: "..." }
-    if(data && (data.sent === 'true' || data.sent === true)){
-      actualizarEstadoReporte(id, 'enviado', new Date().toISOString());
-      actualizarBadgeHistorial();
-      renderHistorial();
-      if(callback) callback(true);
-    } else {
-      // Fallo — mantener pendiente para reintentar
+  // 1. Enviar texto del reporte
+  umSendText(r.msg, function(okTexto){
+    if(!okTexto){
       actualizarEstadoReporte(id, 'pendiente', new Date().toISOString());
       renderHistorial();
       if(callback) callback(false);
+      return;
     }
-  })
-  .catch(function(){
-    // Sin señal — mantener pendiente
-    actualizarEstadoReporte(id, 'pendiente', new Date().toISOString());
+    // Texto enviado — marcar enviado
+    actualizarEstadoReporte(id, 'enviado', new Date().toISOString());
+    actualizarBadgeHistorial();
     renderHistorial();
-    if(callback) callback(false);
+
+    // 2. Enviar fotos si las hay
+    var imgs = r.fotos || [];
+    if(!imgs.length){ if(callback) callback(true); return; }
+    var i = 0;
+    function enviarSigFoto(){
+      if(i >= imgs.length){ if(callback) callback(true); return; }
+      var foto = imgs[i++];
+      var src  = foto.data || foto;
+      umSendImage(src, '📸 Foto '+ i +' — C-'+r.pozo+' ('+r.recorredor+')', function(){
+        setTimeout(enviarSigFoto, 1500); // pausa entre fotos
+      });
+    }
+    enviarSigFoto();
   });
 }
 
@@ -2345,10 +2381,10 @@ function enviarConUltramsg(id, callback){
 function intentarEnviar(id){
   var r = getReporte(id);
   if(!r) return;
-  if(r.estado === 'enviado'){ return; }
+  if(r.estado === 'enviado') return;
   actualizarEstadoReporte(id, 'pendiente', new Date().toISOString());
   renderHistorial();
-  enviarConUltramsg(id, null); // silencioso, sin callbacks visibles
+  enviarConUltramsg(id, null);
 }
 
 // ── Procesar cola completa — silencioso ──────────
@@ -2363,8 +2399,7 @@ function procesarCola(){
     if(idx >= pendientes.length){ _colaEnProceso = false; return; }
     var r = pendientes[idx++];
     enviarConUltramsg(r.id, function(ok){
-      // Esperar 2s entre envíos para no saturar
-      setTimeout(enviarSiguiente, 2000);
+      setTimeout(enviarSiguiente, 2500);
     });
   }
   enviarSiguiente();
@@ -2442,7 +2477,8 @@ function confirmarEnvio(){
     pozo: W,
     recorredor: REC,
     msg: msgPendiente,
-    estado: 'pendiente',      // siempre empieza pendiente
+    fotos: fotos.map(function(f){ return {data:(f.data||f), nombre:(f.nombre||'')}; }),
+    estado: 'pendiente',
     ultimoIntento: null,
     intentos: 0
   };
