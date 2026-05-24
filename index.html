@@ -43,10 +43,11 @@ body.c-active{
   --char-bg:linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 60%,#1e1e1e 100%);
   --hdr:linear-gradient(135deg,#1a1a20 0%,#28282e 60%,#1e1e24 100%);
 }
-/* JUAN CARLOS — campo atardecer */
+/* JUAN CARLOS — naranja campo */
 body.jc-active{
-  --char-bg:linear-gradient(135deg,#3a1a00 0%,#5a2a00 60%,#2e1400 100%);
-  --hdr:linear-gradient(160deg,#2a1000 0%,#4a1e00 50%,#3a1800 100%);
+  --char-bg:linear-gradient(135deg,#0f3460 0%,#1a4d8a 60%,#0f3460 100%);
+  --hdr:linear-gradient(145deg,#0a2240 0%,#0f3460 50%,#1a4d8a 100%);
+  --accent2:#FF7A00;
 }
 
 body{
@@ -72,6 +73,8 @@ body.night .sidebar{background:#050810;border-right-color:#0f1a28}
 
 .sidebar-divider{width:30px;height:1px;background:#1a2a42;margin:4px 0}
 
+.sidebar-locked{opacity:.25;pointer-events:none;filter:grayscale(1)}
+.sidebar.sidebar-unlocked .sidebar-locked{opacity:1;pointer-events:auto;filter:none;transition:opacity .4s,filter .4s}
 .sidebar-icon{
   width:44px;height:44px;border-radius:12px;
   display:flex;align-items:center;justify-content:center;
@@ -365,7 +368,7 @@ body.night .tag-blue{background:#1e3a5f44;color:#60a5fa}
   background:var(--hdr);box-shadow:var(--shadowlg);
   position:relative;overflow:hidden;transition:all .6s;
 }
-.header-row{display:flex;align-items:flex-end;min-height:110px}
+.header-row{display:flex;align-items:flex-end;min-height:160px;padding-bottom:0}
 .header-text{flex:1;padding:16px 0 16px 16px}
 .header-text h1{
   font-family:'Bebas Neue',sans-serif;font-size:44px;color:#fff;
@@ -375,19 +378,157 @@ body.night .tag-blue{background:#1e3a5f44;color:#60a5fa}
 
 /* Character slot in header */
 .char-slot{
-  width:115px;flex-shrink:0;align-self:flex-end;
+  width:130px;height:210px;flex-shrink:0;align-self:flex-end;
   position:relative;overflow:hidden;
 }
-/* Each character hidden by default */
 .char-m,.char-c,.char-jc{
-  position:absolute;bottom:0;right:0;width:115px;
-  opacity:0;transform:translateX(20px) scale(.85);
-  transition:opacity .6s cubic-bezier(.34,1.4,.64,1),transform .6s cubic-bezier(.34,1.4,.64,1);
+  position:absolute;bottom:0;right:0;
+  opacity:0;transform:translateX(14px) scale(.9);
+  transition:opacity .5s cubic-bezier(.34,1.4,.64,1),transform .5s cubic-bezier(.34,1.4,.64,1);
   pointer-events:none;
 }
-body.m-active .char-m{opacity:1;transform:translateX(0) scale(1);position:relative}
-body.c-active .char-c{opacity:1;transform:translateX(0) scale(1);position:relative}
-body.jc-active .char-jc{opacity:1;transform:translateX(0) scale(1);position:relative}
+.char-m svg,.char-c svg,.char-jc svg{display:block;filter:drop-shadow(0 4px 16px rgba(0,0,0,.35))}
+body.m-active .char-m{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+body.c-active .char-c{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+body.jc-active .char-jc{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+
+/* Floating bob */
+@keyframes charFloat{
+  0%,100%{transform:translateY(0)}
+  30%{transform:translateY(-5px)}
+  60%{transform:translateY(-2px)}
+}
+
+/* Header animated glow spot */
+.header::before{
+  content:'';position:absolute;
+  width:220px;height:220px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,122,0,.18) 0%,transparent 70%);
+  bottom:-60px;right:-20px;
+  animation:glowPulse 4s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes glowPulse{
+  0%,100%{opacity:.6;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.15)}
+}
+
+/* Particle dots in header background */
+.header-particles{
+  position:absolute;inset:0;overflow:hidden;border-radius:18px;pointer-events:none;
+}
+.header-particles span{
+  position:absolute;border-radius:50%;background:rgba(255,255,255,.12);
+  animation:particleDrift linear infinite;
+}
+.header-particles span:nth-child(1){width:4px;height:4px;left:15%;bottom:-10px;animation-duration:7s;animation-delay:0s}
+.header-particles span:nth-child(2){width:3px;height:3px;left:35%;bottom:-10px;animation-duration:9s;animation-delay:1.5s}
+.header-particles span:nth-child(3){width:5px;height:5px;left:55%;bottom:-10px;animation-duration:6s;animation-delay:3s}
+.header-particles span:nth-child(4){width:2px;height:2px;left:70%;bottom:-10px;animation-duration:8s;animation-delay:.5s}
+.header-particles span:nth-child(5){width:4px;height:4px;left:85%;bottom:-10px;animation-duration:10s;animation-delay:2s}
+.header-particles span:nth-child(6){width:3px;height:3px;left:25%;bottom:-10px;animation-duration:7.5s;animation-delay:4s}
+@keyframes particleDrift{
+  0%{transform:translateY(0) translateX(0);opacity:0}
+  10%{opacity:1}
+  90%{opacity:.4}
+  100%{transform:translateY(-220px) translateX(20px);opacity:0}
+}
+
+/* Shimmer line across header */
+.header::after{
+  content:'';position:absolute;
+  top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.04) 50%,transparent 100%);
+  animation:shimmerLine 6s ease-in-out infinite;
+  pointer-events:none;border-radius:18px;
+}
+@keyframes shimmerLine{
+  0%{left:-100%}
+  60%,100%{left:160%}
+}
+
+/* Shadow under character pulsing */
+body.m-active .char-m svg,
+body.c-active .char-c svg,
+body.jc-active .char-jc svg{
+  animation:charFloat 3.5s ease-in-out infinite, shadowPulse 3.5s ease-in-out infinite;
+}
+@keyframes shadowPulse{
+  0%,100%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
+  50%{filter:drop-shadow(0 12px 28px rgba(0,0,0,.5)) drop-shadow(0 0 20px rgba(255,122,0,.2))}
+}
+body.m-active .char-m{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+body.c-active .char-c{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+body.jc-active .char-jc{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+
+/* Floating bob */
+@keyframes charFloat{
+  0%,100%{transform:translateY(0)}
+  30%{transform:translateY(-5px)}
+  60%{transform:translateY(-2px)}
+}
+
+/* Header animated glow spot */
+.header::before{
+  content:'';position:absolute;
+  width:220px;height:220px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,122,0,.18) 0%,transparent 70%);
+  bottom:-60px;right:-20px;
+  animation:glowPulse 4s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes glowPulse{
+  0%,100%{opacity:.6;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.15)}
+}
+
+/* Particle dots in header background */
+.header-particles{
+  position:absolute;inset:0;overflow:hidden;border-radius:18px;pointer-events:none;
+}
+.header-particles span{
+  position:absolute;border-radius:50%;background:rgba(255,255,255,.12);
+  animation:particleDrift linear infinite;
+}
+.header-particles span:nth-child(1){width:4px;height:4px;left:15%;bottom:-10px;animation-duration:7s;animation-delay:0s}
+.header-particles span:nth-child(2){width:3px;height:3px;left:35%;bottom:-10px;animation-duration:9s;animation-delay:1.5s}
+.header-particles span:nth-child(3){width:5px;height:5px;left:55%;bottom:-10px;animation-duration:6s;animation-delay:3s}
+.header-particles span:nth-child(4){width:2px;height:2px;left:70%;bottom:-10px;animation-duration:8s;animation-delay:.5s}
+.header-particles span:nth-child(5){width:4px;height:4px;left:85%;bottom:-10px;animation-duration:10s;animation-delay:2s}
+.header-particles span:nth-child(6){width:3px;height:3px;left:25%;bottom:-10px;animation-duration:7.5s;animation-delay:4s}
+@keyframes particleDrift{
+  0%{transform:translateY(0) translateX(0);opacity:0}
+  10%{opacity:1}
+  90%{opacity:.4}
+  100%{transform:translateY(-220px) translateX(20px);opacity:0}
+}
+
+/* Shimmer line across header */
+.header::after{
+  content:'';position:absolute;
+  top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.04) 50%,transparent 100%);
+  animation:shimmerLine 6s ease-in-out infinite;
+  pointer-events:none;border-radius:18px;
+}
+@keyframes shimmerLine{
+  0%{left:-100%}
+  60%,100%{left:160%}
+}
+
+/* Shadow under character pulsing */
+body.m-active .char-m svg,
+body.c-active .char-c svg,
+body.jc-active .char-jc svg{
+  animation:charFloat 3.5s ease-in-out infinite, shadowPulse 3.5s ease-in-out infinite;
+}
+@keyframes shadowPulse{
+  0%,100%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
+  50%{filter:drop-shadow(0 12px 28px rgba(0,0,0,.5)) drop-shadow(0 0 20px rgba(255,122,0,.2))}
+}
+
 
 /* Glow effect per character */
 body.m-active .header::after{content:'';position:absolute;bottom:0;right:0;width:140px;height:100%;background:radial-gradient(ellipse at 80% 100%,rgba(30,120,255,.2) 0%,transparent 70%);pointer-events:none}
@@ -567,7 +708,96 @@ body.night .chk-row.on{background:#052e1640}
 .send-btn{width:100%;padding:16px;background:var(--send);color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;box-shadow:0 4px 16px rgba(22,163,74,.3)}
 .send-btn:hover{transform:translateY(-1px)}.send-btn:active{transform:scale(.98)}
 
-/* ══ DISEÑO CAMPO ══ */
+/* ══ PROFILE PICKER — GAME STYLE ══ */
+.profile-picker{padding:4px 0 16px;background:transparent}
+.profile-picker-title{text-align:center;margin-bottom:18px;padding:14px 0 0}
+.profile-picker-logo{font-size:32px;margin-bottom:2px;animation:logoPulse 2s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.profile-picker-h{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--accent)}
+.profile-picker-s{font-size:11px;color:var(--txt2);margin-top:2px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.profile-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:4px}
+.profile-card{
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  padding:0;border-radius:14px;overflow:hidden;
+  background:#0a1628;border:1.5px solid rgba(255,255,255,.12);
+  cursor:pointer;transition:all .25s cubic-bezier(.34,1.4,.64,1);
+  font-family:'Inter',sans-serif;width:calc(33% - 6px);min-width:90px;max-width:116px;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);
+}
+/* Glow on hover per card */
+.pc-m:hover{border-color:#4a9eff;box-shadow:0 0 0 2px rgba(74,158,255,.25),0 8px 24px rgba(0,0,0,.5);transform:translateY(-4px) scale(1.03)}
+.pc-c:hover{border-color:#888;box-shadow:0 0 0 2px rgba(136,136,136,.25),0 8px 24px rgba(0,0,0,.5);transform:translateY(-4px) scale(1.03)}
+.pc-jc:hover{border-color:#4ade80;box-shadow:0 0 0 2px rgba(74,222,128,.25),0 8px 24px rgba(0,0,0,.5);transform:translateY(-4px) scale(1.03)}
+.pc-super:hover{border-color:#FF7A00;box-shadow:0 0 0 2px rgba(255,122,0,.3),0 8px 24px rgba(0,0,0,.5);transform:translateY(-4px) scale(1.03)}
+.pc-jefe:hover{border-color:#a78bfa;box-shadow:0 0 0 2px rgba(167,139,250,.3),0 8px 24px rgba(0,0,0,.5);transform:translateY(-4px) scale(1.03)}
+.profile-card:active{transform:scale(.95)!important}
+
+/* Tier banner top */
+.profile-tier{
+  width:100%;padding:3px 0;text-align:center;
+  font-size:8px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+}
+.tier-field{background:#1e3a6a;color:#60a5fa}
+.tier-elite{background:#FF7A00;color:#fff}
+.tier-legend{background:linear-gradient(90deg,#7c3aed,#a855f7);color:#fff}
+.tier-lock{background:#1a1a1a;color:#888}
+
+/* Avatar area */
+.profile-avatar{
+  width:100%;height:86px;
+  display:flex;align-items:flex-end;justify-content:center;
+  overflow:hidden;position:relative;padding-top:4px;
+}
+.pa-m{background:linear-gradient(180deg,#0d2040 0%,#1e3a6a 100%)}
+.pa-c{background:linear-gradient(180deg,#0d0d0d 0%,#252525 100%)}
+.pa-jc{background:linear-gradient(180deg,#0a1f10 0%,#1a4a20 100%)}
+.pa-super{background:linear-gradient(180deg,#1f0d00 0%,#4a1e00 100%)}
+.pa-jefe{background:linear-gradient(180deg,#0a0d2a 0%,#1a1a6a 100%)}
+.profile-avatar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:30px;
+  background:linear-gradient(transparent,rgba(0,0,0,.6));
+}
+.profile-avatar svg{position:relative;z-index:1}
+
+/* Info area */
+.profile-info{width:100%;padding:8px 8px 10px;background:#0a1628}
+.profile-name{font-size:12px;font-weight:900;color:#fff;text-align:center;letter-spacing:.5px;line-height:1.2}
+.profile-role{font-size:9px;color:rgba(255,255,255,.4);text-align:center;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+/* Stat bars */
+.profile-stats{display:flex;gap:2px;margin-top:6px;padding:0 2px}
+.pstat{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.1)}
+.ps-m .pstat:nth-child(1){background:#4a9eff}
+.ps-m .pstat:nth-child(2){background:#4a9eff;opacity:.7}
+.ps-m .pstat:nth-child(3){background:#4a9eff;opacity:.4}
+.ps-c .pstat:nth-child(1){background:#888}
+.ps-c .pstat:nth-child(2){background:#888;opacity:.7}
+.ps-c .pstat:nth-child(3){background:#888;opacity:.4}
+.ps-jc .pstat:nth-child(1){background:#4ade80}
+.ps-jc .pstat:nth-child(2){background:#4ade80;opacity:.7}
+.ps-jc .pstat:nth-child(3){background:#4ade80;opacity:.4}
+.ps-super .pstat:nth-child(1){background:#FF7A00}
+.ps-super .pstat:nth-child(2){background:#FF7A00;opacity:.7}
+.ps-super .pstat:nth-child(3){background:#FF7A00;opacity:.5}
+.ps-jefe .pstat:nth-child(1){background:#a78bfa}
+.ps-jefe .pstat:nth-child(2){background:#a78bfa;opacity:.7}
+.ps-jefe .pstat:nth-child(3){background:#a78bfa;opacity:.4}
+
+/* Lock icon for auth cards */
+.profile-lock{position:absolute;top:24px;right:6px;font-size:12px;z-index:2;opacity:.7}
+
+/* Back button */
+.back-to-picker{
+  display:flex;align-items:center;gap:6px;
+  background:transparent;border:1.5px solid var(--border);
+  border-radius:10px;padding:8px 14px;margin-bottom:12px;
+  font-size:13px;font-weight:700;color:var(--txt2);
+  cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;
+}
+.back-to-picker:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ══ PROFILE PICKER ══ */
 .step-card{background:var(--surface);border-radius:18px;padding:20px 16px;margin-bottom:14px;border:1.5px solid var(--border);box-shadow:var(--shadow)}
 .step-label{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:var(--accent);margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:8px}
 
@@ -641,6 +871,8 @@ body.night .chk-row.on{background:#052e1640}
 .alarm-incoming-close{padding:14px 32px;background:#fff;color:#dc2626;border:none;border-radius:12px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif}
 .alarm-loc-btn{flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid #444;background:#1a1a1a;color:rgba(255,255,255,.6);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
 .alarm-loc-btn.sel{background:#dc2626;border-color:#dc2626;color:#fff}
+.alarm-quien-btn{flex:1;padding:11px 6px;border-radius:10px;border:1.5px solid #444;background:#1a1a1a;color:rgba(255,255,255,.6);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;text-align:center}
+.alarm-quien-btn.sel{background:#FF7A00;border-color:#FF7A00;color:#fff}
 
 /* ══ CONFIRM MODAL ══ */
 .confirm-overlay{
@@ -717,7 +949,7 @@ body.night .chk-row.on{background:#052e1640}
   </div>
 
   <!-- Superintendente -->
-  <div class="sidebar-icon" id="icon-super" data-tip="Superintendente 🔒" onclick="requireLogin('super')">
+  <div class="sidebar-icon sidebar-locked" id="icon-super" data-tip="Superintendente 🔒" onclick="requireLogin('super')">
     <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
       <path d="M6 17 Q6 10 14 9 Q22 10 22 17 Z" fill="#FF7A00" stroke="#FF7A00" stroke-width="1"/>
       <rect x="5" y="17" width="18" height="3" rx="1.5" fill="#FF7A00"/>
@@ -729,7 +961,7 @@ body.night .chk-row.on{background:#052e1640}
   </div>
 
   <!-- Jefe de Ingeniería -->
-  <div class="sidebar-icon" id="icon-jefe" data-tip="Jefe de Ingeniería 🔒" onclick="requireLogin('jefe')">
+  <div class="sidebar-icon sidebar-locked" id="icon-jefe" data-tip="Jefe de Ingeniería 🔒" onclick="requireLogin('jefe')">
     <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
       <circle cx="14" cy="7" r="4" fill="#d4956a" stroke="#1a1a1a" stroke-width="1.2"/>
       <path d="M7 24 Q7 17 14 16 Q21 17 21 24" fill="#1e5caa" stroke="#1e5caa" stroke-width="1"/>
@@ -746,7 +978,7 @@ body.night .chk-row.on{background:#052e1640}
   <div class="sidebar-divider"></div>
 
   <!-- Icono 2: Catálogo de pozos (protegido) -->
-  <div class="sidebar-icon" id="icon-catalogo" data-tip="Información de Pozos 🔒" onclick="requireLogin('catalogo')">
+  <div class="sidebar-icon sidebar-locked" id="icon-catalogo" data-tip="Información de Pozos 🔒" onclick="requireLogin('catalogo')">
     <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
       <polygon points="14,2 4,26 24,26" fill="none" stroke="#7ec8e3" stroke-width="1.8"/>
       <line x1="4" y1="26" x2="24" y2="26" stroke="#7ec8e3" stroke-width="2.5"/>
@@ -761,7 +993,7 @@ body.night .chk-row.on{background:#052e1640}
   </div>
 
   <!-- Icono 3: Ubicación de pozos (protegido) -->
-  <div class="sidebar-icon" id="icon-mapa" data-tip="Ubicación de Pozos 🔒" onclick="requireLogin('mapa')">
+  <div class="sidebar-icon sidebar-locked" id="icon-mapa" data-tip="Ubicación de Pozos 🔒" onclick="requireLogin('mapa')">
     <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
       <path d="M14 3 Q20 3 20 10 Q20 16 14 24 Q8 16 8 10 Q8 3 14 3Z" fill="none" stroke="#4ade80" stroke-width="2"/>
       <circle cx="14" cy="10" r="3.5" fill="#4ade80"/>
@@ -771,7 +1003,7 @@ body.night .chk-row.on{background:#052e1640}
   </div>
 
   <!-- Historial de reportes -->
-  <div class="sidebar-icon" id="icon-historial" data-tip="Historial de Reportes 🔒" onclick="requireLogin('historial')">
+  <div class="sidebar-icon sidebar-locked" id="icon-historial" data-tip="Historial de Reportes 🔒" onclick="requireLogin('historial')">
     <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
       <rect x="5" y="3" width="16" height="20" rx="3" fill="none" stroke="#f0c060" stroke-width="1.8"/>
       <line x1="8" y1="8"  x2="18" y2="8"  stroke="#f0c060" stroke-width="1.4"/>
@@ -785,6 +1017,213 @@ body.night .chk-row.on{background:#052e1640}
 
 <div class="wrap">
 <div class="view active" id="view-visitas">
+
+<!-- ══ SELECTOR DE PERFIL ══ -->
+<div id="profilePicker" class="profile-picker">
+  <div class="profile-picker-title">
+    <div class="profile-picker-logo">🛢</div>
+    <div class="profile-picker-h">Campo Cuichapa</div>
+    <div class="profile-picker-s">¿Quién eres?</div>
+  </div>
+  <div class="profile-grid">
+
+    <!-- Manrique -->
+    <button class="profile-card pc-m" onclick="selProfile('Manrique','m','rec')">
+      <div class="profile-tier tier-field">★ CAMPO</div>
+      <div class="profile-avatar pa-m">
+        <svg viewBox="0 0 60 80" width="60" height="80">
+          <ellipse cx="30" cy="78" rx="18" ry="4" fill="rgba(0,0,0,.2)"/>
+          <rect x="14" y="48" width="14" height="26" rx="3" fill="#E8650A"/>
+          <rect x="32" y="48" width="14" height="26" rx="3" fill="#E8650A"/>
+          <rect x="12" y="66" width="18" height="3" rx="1" fill="#ccc" opacity=".7"/>
+          <rect x="30" y="66" width="18" height="3" rx="1" fill="#ccc" opacity=".7"/>
+          <rect x="10" y="28" width="40" height="24" rx="6" fill="#E8650A"/>
+          <rect x="24" y="30" width="10" height="8" rx="2" fill="#CF5800" opacity=".8"/>
+          <rect x="10" y="44" width="40" height="5" rx="2" fill="#1a1a1a"/>
+          <rect x="10" y="33" width="40" height="3" rx="1" fill="#ccc" opacity=".5"/>
+          <rect x="3" y="28" width="10" height="22" rx="5" fill="#E8650A"/>
+          <rect x="47" y="28" width="10" height="22" rx="5" fill="#E8650A"/>
+          <rect x="1" y="44" width="14" height="8" rx="4" fill="#1a1a1a"/>
+          <!-- Casco en mano -->
+          <ellipse cx="8" cy="56" rx="8" ry="6" fill="#f0f0f0"/>
+          <rect x="47" y="44" width="13" height="8" rx="4" fill="#1a1a1a"/>
+          <rect x="26" y="20" width="8" height="10" rx="4" fill="#c8845a"/>
+          <ellipse cx="30" cy="15" rx="14" ry="14" fill="#c8845a"/>
+          <path d="M16 10 Q30 2 44 10 Q44 4 30 2 Q16 4 16 10Z" fill="#1a0a04"/>
+          <path d="M18 22 Q30 30 42 22 Q42 28 30 32 Q18 28 18 22Z" fill="#2a1204" opacity=".85"/>
+          <ellipse cx="23" cy="14" rx="3" ry="2.5" fill="#fff"/>
+          <ellipse cx="37" cy="14" rx="3" ry="2.5" fill="#fff"/>
+          <circle cx="24" cy="15" r="2" fill="#2a1204"/>
+          <circle cx="38" cy="15" r="2" fill="#2a1204"/>
+        </svg>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">Manrique</div>
+        <div class="profile-role">Recorredor</div>
+        <div class="profile-stats ps-m"><div class="pstat"></div><div class="pstat"></div><div class="pstat"></div></div>
+      </div>
+    </button>
+
+    <!-- Cirilo -->
+    <button class="profile-card pc-c" onclick="selProfile('Cirilo','c','rec')">
+      <div class="profile-tier tier-field">★ CAMPO</div>
+      <div class="profile-avatar pa-c">
+        <svg viewBox="0 0 60 80" width="60" height="80">
+          <ellipse cx="30" cy="78" rx="18" ry="4" fill="rgba(0,0,0,.2)"/>
+          <rect x="14" y="48" width="14" height="26" rx="3" fill="#E8650A"/>
+          <rect x="32" y="48" width="14" height="26" rx="3" fill="#E8650A"/>
+          <rect x="12" y="66" width="18" height="3" rx="1" fill="#ccc" opacity=".7"/>
+          <rect x="30" y="66" width="18" height="3" rx="1" fill="#ccc" opacity=".7"/>
+          <rect x="10" y="28" width="40" height="24" rx="6" fill="#E8650A"/>
+          <rect x="10" y="44" width="40" height="5" rx="2" fill="#1a1a1a"/>
+          <rect x="10" y="33" width="40" height="3" rx="1" fill="#ccc" opacity=".5"/>
+          <!-- Radio en hombro -->
+          <rect x="46" y="22" width="8" height="14" rx="2" fill="#1a1a1a"/>
+          <circle cx="50" cy="28" r="1.5" fill="#00ff88" opacity=".9"/>
+          <rect x="3" y="28" width="10" height="22" rx="5" fill="#E8650A"/>
+          <rect x="47" y="28" width="10" height="22" rx="5" fill="#E8650A"/>
+          <rect x="1" y="44" width="14" height="8" rx="4" fill="#1a1a1a"/>
+          <rect x="47" y="44" width="13" height="8" rx="4" fill="#1a1a1a"/>
+          <rect x="26" y="20" width="8" height="10" rx="4" fill="#b87848"/>
+          <ellipse cx="30" cy="15" rx="14" ry="14" fill="#b87848"/>
+          <path d="M16 8 Q30 0 44 8 Q44 2 30 0 Q16 2 16 8Z" fill="#0f0804"/>
+          <path d="M17 22 Q30 34 43 22 Q44 30 30 36 Q16 30 17 22Z" fill="#0f0804" opacity=".9"/>
+          <!-- Lentes oscuros -->
+          <rect x="18" y="12" rx="3" width="10" height="6" fill="#111" opacity=".95"/>
+          <rect x="32" y="12" rx="3" width="10" height="6" fill="#111" opacity=".95"/>
+          <line x1="28" y1="15" x2="32" y2="15" stroke="#333" stroke-width="1.5"/>
+          <rect x="18" y="12" rx="3" width="10" height="6" fill="none" stroke="#555" stroke-width=".8"/>
+          <rect x="32" y="12" rx="3" width="10" height="6" fill="none" stroke="#555" stroke-width=".8"/>
+        </svg>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">Cirilo</div>
+        <div class="profile-role">Recorredor</div>
+        <div class="profile-stats ps-c"><div class="pstat"></div><div class="pstat"></div><div class="pstat"></div></div>
+      </div>
+    </button>
+
+    <!-- Juan Carlos -->
+    <button class="profile-card pc-jc" onclick="selProfile('Juan Carlos','jc','rec')">
+      <div class="profile-tier tier-field">★ CAMPO</div>
+      <div class="profile-avatar pa-jc">
+        <svg viewBox="0 0 60 80" width="60" height="80">
+          <ellipse cx="30" cy="78" rx="18" ry="4" fill="rgba(0,0,0,.2)"/>
+          <rect x="14" y="48" width="14" height="26" rx="3" fill="#E8650A"/>
+          <rect x="32" y="48" width="14" height="26" rx="3" fill="#E8650A"/>
+          <rect x="12" y="66" width="18" height="3" rx="1" fill="#ccc" opacity=".7"/>
+          <rect x="30" y="66" width="18" height="3" rx="1" fill="#ccc" opacity=".7"/>
+          <rect x="10" y="28" width="40" height="24" rx="6" fill="#E8650A"/>
+          <!-- Tablet -->
+          <rect x="14" y="32" width="20" height="14" rx="2" fill="#1a1a2e" stroke="#333" stroke-width=".8"/>
+          <rect x="15" y="33" width="18" height="10" rx="1" fill="#2a4a8a" opacity=".8"/>
+          <rect x="10" y="44" width="40" height="5" rx="2" fill="#1a1a1a"/>
+          <rect x="10" y="33" width="40" height="3" rx="1" fill="#ccc" opacity=".5"/>
+          <rect x="3" y="30" width="10" height="20" rx="5" fill="#E8650A"/>
+          <rect x="47" y="30" width="10" height="20" rx="5" fill="#E8650A"/>
+          <rect x="1" y="43" width="14" height="8" rx="4" fill="#1a1a1a"/>
+          <rect x="47" y="43" width="13" height="8" rx="4" fill="#1a1a1a"/>
+          <rect x="26" y="20" width="8" height="10" rx="4" fill="#c09060"/>
+          <ellipse cx="30" cy="15" rx="13" ry="13" fill="#c09060"/>
+          <!-- Casco -->
+          <path d="M17 10 Q30 0 43 10 Q44 6 30 4 Q16 6 17 10Z" fill="#f0f0f0"/>
+          <ellipse cx="30" cy="10" rx="16" ry="5" fill="#e8e8e8"/>
+          <rect x="14" y="9" width="32" height="4" rx="2" fill="#ddd"/>
+          <circle cx="30" cy="5" r="3" fill="#0f3460"/>
+          <!-- Safety glasses -->
+          <rect x="19" y="14" rx="2" width="9" height="5" fill="rgba(150,200,255,.4)" stroke="#aaa" stroke-width=".8"/>
+          <rect x="32" y="14" rx="2" width="9" height="5" fill="rgba(150,200,255,.4)" stroke="#aaa" stroke-width=".8"/>
+          <line x1="28" y1="16" x2="32" y2="16" stroke="#aaa" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">Juan Carlos</div>
+        <div class="profile-role">Recorredor</div>
+        <div class="profile-stats ps-jc"><div class="pstat"></div><div class="pstat"></div><div class="pstat"></div></div>
+      </div>
+    </button>
+
+    <!-- Superintendente -->
+    <button class="profile-card pc-super" onclick="selProfile('Superintendente','super','auth')">
+      <div class="profile-tier tier-elite">🔒 ELITE</div>
+      <div class="profile-avatar pa-super">
+        <svg viewBox="0 0 60 80" width="60" height="80">
+          <ellipse cx="30" cy="78" rx="18" ry="4" fill="rgba(0,0,0,.2)"/>
+          <rect x="14" y="48" width="14" height="26" rx="3" fill="#E8650A"/>
+          <rect x="32" y="48" width="14" height="26" rx="3" fill="#E8650A"/>
+          <rect x="10" y="28" width="40" height="24" rx="6" fill="#E8650A"/>
+          <rect x="10" y="44" width="40" height="5" rx="2" fill="#1a1a1a"/>
+          <rect x="3" y="28" width="10" height="22" rx="5" fill="#E8650A"/>
+          <rect x="47" y="28" width="10" height="22" rx="5" fill="#E8650A"/>
+          <!-- Radio en mano -->
+          <rect x="38" y="44" width="8" height="14" rx="2" fill="#1a1a1a"/>
+          <rect x="38" y="48" width="8" height="3" rx="1" fill="#333"/>
+          <circle cx="42" cy="52" r="1.5" fill="#ff4444"/>
+          <rect x="26" y="20" width="8" height="10" rx="4" fill="#c8845a"/>
+          <ellipse cx="30" cy="15" rx="14" ry="14" fill="#c8845a"/>
+          <!-- Casco blanco con estrellas -->
+          <path d="M16 8 Q30 0 44 8 Q44 2 30 0 Q16 2 16 8Z" fill="#f0f0f0"/>
+          <ellipse cx="30" cy="8" rx="16" ry="5.5" fill="#e8e8e8"/>
+          <rect x="14" y="7" width="32" height="4" rx="2" fill="#ddd"/>
+          <!-- Lentes oscuros -->
+          <rect x="18" y="13" rx="3" width="10" height="6" fill="#1a1a2e" opacity=".9"/>
+          <rect x="32" y="13" rx="3" width="10" height="6" fill="#1a1a2e" opacity=".9"/>
+          <line x1="28" y1="16" x2="32" y2="16" stroke="#333" stroke-width="1.5"/>
+          <!-- Estrellas de rango en pecho -->
+          <text x="30" y="40" text-anchor="middle" font-size="8" fill="#f0c060">★★</text>
+        </svg>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">Superintendente</div>
+        <div class="profile-role">Acceso protegido</div>
+        <div class="profile-stats ps-super"><div class="pstat"></div><div class="pstat"></div><div class="pstat"></div></div>
+      </div>
+    </button>
+
+    <!-- Jefe de Ingeniería -->
+    <button class="profile-card pc-jefe" onclick="selProfile('Jefe','jefe','auth')">
+      <div class="profile-tier tier-legend">🔒 LEYENDA</div>
+      <div class="profile-avatar pa-jefe">
+        <svg viewBox="0 0 60 80" width="60" height="80">
+          <ellipse cx="30" cy="78" rx="18" ry="4" fill="rgba(0,0,0,.2)"/>
+          <rect x="14" y="48" width="14" height="26" rx="3" fill="#1e5caa"/>
+          <rect x="32" y="48" width="14" height="26" rx="3" fill="#1e5caa"/>
+          <rect x="10" y="28" width="40" height="24" rx="6" fill="#1e5caa"/>
+          <rect x="10" y="44" width="40" height="5" rx="2" fill="#0f3460"/>
+          <rect x="3" y="28" width="10" height="22" rx="5" fill="#1e5caa"/>
+          <rect x="47" y="28" width="10" height="22" rx="5" fill="#1e5caa"/>
+          <!-- Tablet/clipboard en mano -->
+          <rect x="15" y="34" width="20" height="16" rx="2" fill="#0f1f3a" stroke="#2a4a8a" stroke-width="1"/>
+          <rect x="16" y="35" width="18" height="10" rx="1" fill="#1e3a6a" opacity=".9"/>
+          <!-- Engrane en logo pecho -->
+          <circle cx="42" cy="34" r="6" fill="#0f3460"/>
+          <circle cx="42" cy="34" r="3.5" fill="none" stroke="#4ade80" stroke-width="1.5"/>
+          <circle cx="42" cy="34" r="1.5" fill="#4ade80"/>
+          <rect x="26" y="20" width="8" height="10" rx="4" fill="#c8845a"/>
+          <ellipse cx="30" cy="15" rx="14" ry="14" fill="#c8845a"/>
+          <path d="M16 8 Q30 0 44 8 Q44 2 30 0 Q16 2 16 8Z" fill="#1a0a04"/>
+          <path d="M18 24 Q30 32 42 24 Q42 30 30 34 Q18 30 18 24Z" fill="#1a0a04" opacity=".8"/>
+          <ellipse cx="23" cy="14" rx="3" ry="2.5" fill="#fff"/>
+          <ellipse cx="37" cy="14" rx="3" ry="2.5" fill="#fff"/>
+          <circle cx="24" cy="15" r="2" fill="#1a0a04"/>
+          <circle cx="38" cy="15" r="2" fill="#1a0a04"/>
+        </svg>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">Jefe Ing.</div>
+        <div class="profile-role">Acceso protegido</div>
+        <div class="profile-stats ps-jefe"><div class="pstat"></div><div class="pstat"></div><div class="pstat"></div></div>
+      </div>
+    </button>
+
+  </div>
+</div><!-- /profilePicker -->
+
+<!-- ══ FORMULARIO (oculto hasta elegir perfil) ══ -->
+<div id="formContent" style="display:none">
+
+<!-- BACK ARROW -->
+<button class="back-to-picker" onclick="volverAlPicker()">‹ Cambiar perfil</button>
 
 <!-- Banner PWA -->
 <div class="install-banner" id="installBanner">
@@ -807,82 +1246,204 @@ body.night .chk-row.on{background:#052e1640}
 
 <!-- HEADER limpio -->
 <div class="header">
+  <div class="header-particles">
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
   <div class="header-row">
     <div class="header-text">
+      <div id="recBadge" style="display:none;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px;margin-bottom:6px;width:fit-content">
+        <span style="font-size:11px;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:1px" id="recBadgeName"></span>
+      </div>
       <h1 id="wellTitle">C-???</h1>
       <p id="headerSub">Campo Cuichapa · Registro de Visita</p>
     </div>
-    <div class="char-slot" style="height:130px">
-      <div class="char-m">
-        <svg viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg" width="115" height="153">
-          <ellipse cx="60" cy="158" rx="30" ry="5" fill="#000" opacity=".25"/>
-          <rect x="28" y="98" width="64" height="52" rx="14" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
-          <rect x="32" y="136" width="22" height="20" rx="6" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
-          <rect x="66" y="136" width="22" height="20" rx="6" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
-          <rect x="30" y="150" width="26" height="12" rx="5" fill="#5C3317" stroke="#1a1a1a" stroke-width="2"/>
-          <rect x="64" y="150" width="26" height="12" rx="5" fill="#5C3317" stroke="#1a1a1a" stroke-width="2"/>
-          <rect x="28" y="132" width="64" height="7" rx="3" fill="#E0D9C0" stroke="#1a1a1a" stroke-width="1.5" opacity=".95"/>
-          <rect x="32" y="148" width="22" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
-          <rect x="66" y="148" width="22" height="5" rx="2" fill="#E0D9C0" opacity=".9"/>
-          <rect x="46" y="108" width="36" height="12" rx="4" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
-          <text x="64" y="117" text-anchor="middle" font-size="6.5" font-weight="900" fill="#1a1a1a" font-family="Arial Black,sans-serif">PETROLERO</text>
-          <rect x="31" y="108" width="11" height="20" rx="3" fill="#222" stroke="#1a1a1a" stroke-width="1.5"/>
-          <rect x="32" y="110" width="9" height="11" rx="1" fill="#3a6a3a"/>
-          <circle cx="36" cy="108" r="1.5" fill="#ff4444"/>
-          <rect x="14" y="104" width="26" height="18" rx="9" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
-          <rect x="80" y="104" width="26" height="18" rx="9" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2.5"/>
-          <rect x="22" y="112" width="76" height="10" rx="5" fill="#FF7A00" stroke="#1a1a1a" stroke-width="2"/>
-          <ellipse cx="22" cy="117" rx="10" ry="8" fill="#D4956A" stroke="#1a1a1a" stroke-width="2"/>
-          <ellipse cx="98" cy="117" rx="10" ry="8" fill="#D4956A" stroke="#1a1a1a" stroke-width="2"/>
-          <rect x="48" y="86" width="24" height="16" rx="8" fill="#D4956A" stroke="#1a1a1a" stroke-width="2"/>
-          <path d="M18 68 Q18 30 60 26 Q102 30 102 68 Q96 56 60 53 Q24 56 18 68Z" fill="#EEEADE" stroke="#1a1a1a" stroke-width="2.5"/>
-          <path d="M22 66 Q26 46 60 43 Q94 46 98 66 Q90 56 60 54 Q30 56 22 66Z" fill="#F7F4EA"/>
-          <rect x="24" y="64" width="72" height="9" rx="4" fill="#D8D5C5" stroke="#1a1a1a" stroke-width="2"/>
-          <path d="M57 36 Q60 26 63 36 Q66 43 60 46 Q54 43 57 36Z" fill="#FF7A00" stroke="#1a1a1a" stroke-width="1.5"/>
-          <ellipse cx="60" cy="68" rx="38" ry="36" fill="#D4956A" stroke="#1a1a1a" stroke-width="3"/>
-          <ellipse cx="22" cy="70" rx="7" ry="9" fill="#C07A50" stroke="#1a1a1a" stroke-width="2.5"/>
-          <ellipse cx="98" cy="70" rx="7" ry="9" fill="#C07A50" stroke="#1a1a1a" stroke-width="2.5"/>
-          <path d="M26 70 Q23 60 28 54" stroke="#1a0a04" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M94 70 Q97 60 92 54" stroke="#1a0a04" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M36 72 Q46 66 60 65 Q74 66 84 72" stroke="#1a0a04" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-          <rect x="28" y="63" width="28" height="17" rx="6" fill="#B8DDF8" stroke="#222" stroke-width="2.8" opacity=".85"/>
-          <rect x="64" y="63" width="28" height="17" rx="6" fill="#B8DDF8" stroke="#222" stroke-width="2.8" opacity=".85"/>
-          <line x1="56" y1="71" x2="64" y2="71" stroke="#222" stroke-width="2.5"/>
-          <line x1="28" y1="71" x2="22" y2="70" stroke="#222" stroke-width="2"/>
-          <line x1="92" y1="71" x2="98" y2="70" stroke="#222" stroke-width="2"/>
-          <circle cx="42" cy="71" r="5" fill="#2a1200"/>
-          <circle cx="78" cy="71" r="5" fill="#2a1200"/>
-          <circle cx="44" cy="69" r="2" fill="#fff"/>
-          <circle cx="80" cy="69" r="2" fill="#fff"/>
-          <path d="M40 86 Q60 98 80 86" stroke="#7A3010" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <path d="M43 87 Q60 96 77 87 Q76 93 60 94 Q44 93 43 87Z" fill="#FAEBD0" stroke="#7A3010" stroke-width="1.5"/>
-        </svg>
-      </div>
-      <div class="char-c" style="position:absolute;bottom:0;right:0;width:115px;opacity:0;transform:translateX(20px) scale(.85);transition:opacity .6s cubic-bezier(.34,1.4,.64,1),transform .6s cubic-bezier(.34,1.4,.64,1);pointer-events:none"></div>
-      <div class="char-jc" style="position:absolute;bottom:0;right:0;width:115px;opacity:0;transform:translateX(20px) scale(.85);transition:opacity .6s cubic-bezier(.34,1.4,.64,1),transform .6s cubic-bezier(.34,1.4,.64,1);pointer-events:none"></div>
-    </div>
+    <div class="char-slot">
+
+  <!-- MANRIQUE: Dark hair, beard, casco en mano -->
+  <div class="char-m">
+    <svg viewBox="0 0 110 200" xmlns="http://www.w3.org/2000/svg" width="110" height="200">
+      <!-- Sombra base -->
+      <ellipse cx="55" cy="197" rx="28" ry="5" fill="rgba(0,0,0,.2)"/>
+      <!-- Botas -->
+      <rect x="30" y="175" width="20" height="18" rx="4" fill="#4a3520"/>
+      <rect x="60" y="175" width="20" height="18" rx="4" fill="#4a3520"/>
+      <rect x="28" y="183" width="24" height="6" rx="3" fill="#3a2810"/>
+      <rect x="58" y="183" width="24" height="6" rx="3" fill="#3a2810"/>
+      <!-- Piernas overol naranja -->
+      <rect x="32" y="120" width="22" height="60" rx="4" fill="#E8650A"/>
+      <rect x="56" y="120" width="22" height="60" rx="4" fill="#E8650A"/>
+      <!-- Lineas reflectivas piernas -->
+      <rect x="30" y="165" width="26" height="4" rx="2" fill="#ccc" opacity=".7"/>
+      <rect x="54" y="165" width="26" height="4" rx="2" fill="#ccc" opacity=".7"/>
+      <!-- Cuerpo overol -->
+      <rect x="24" y="75" width="62" height="52" rx="8" fill="#E8650A"/>
+      <!-- Bolsillo pecho -->
+      <rect x="40" y="80" width="16" height="12" rx="3" fill="#CF5800" opacity=".8"/>
+      <!-- Radio/walkie en cinturón -->
+      <rect x="64" y="100" width="10" height="18" rx="3" fill="#222"/>
+      <rect x="65" y="102" width="8" height="4" rx="1" fill="#444"/>
+      <circle cx="69" cy="108" r="2" fill="#ff4444"/>
+      <!-- Cinturón -->
+      <rect x="24" y="112" width="62" height="8" rx="4" fill="#1a1a1a"/>
+      <rect x="50" y="113" width="10" height="6" rx="2" fill="#555"/>
+      <!-- Lineas reflectivas cuerpo -->
+      <rect x="22" y="92" width="66" height="5" rx="2" fill="#ccc" opacity=".65"/>
+      <!-- Brazo izq con guante sosteniendo casco -->
+      <rect x="8" y="75" width="18" height="44" rx="8" fill="#E8650A"/>
+      <rect x="6" y="112" width="22" height="14" rx="6" fill="#1a1a1a"/>
+      <!-- Casco blanco en mano -->
+      <ellipse cx="17" cy="136" rx="14" ry="10" fill="#f0f0f0" stroke="#ddd" stroke-width="1"/>
+      <rect x="6" y="136" width="22" height="6" rx="3" fill="#e0e0e0"/>
+      <!-- Brazo der -->
+      <rect x="84" y="75" width="18" height="44" rx="8" fill="#E8650A"/>
+      <rect x="84" y="112" width="20" height="14" rx="6" fill="#1a1a1a"/>
+      <!-- Cuello -->
+      <rect x="46" y="60" width="18" height="18" rx="6" fill="#c8845a"/>
+      <!-- Cabeza -->
+      <ellipse cx="55" cy="45" rx="22" ry="24" fill="#c8845a"/>
+      <!-- Orejas -->
+      <ellipse cx="33" cy="46" rx="5" ry="7" fill="#b8744a"/>
+      <ellipse cx="77" cy="46" rx="5" ry="7" fill="#b8744a"/>
+      <!-- Cabello oscuro -->
+      <path d="M33 32 Q55 18 77 32 Q77 22 55 18 Q33 22 33 32Z" fill="#1a0a04"/>
+      <path d="M33 32 Q30 28 32 36" fill="#1a0a04"/>
+      <path d="M77 32 Q80 28 78 36" fill="#1a0a04"/>
+      <!-- Barba -->
+      <path d="M37 58 Q55 68 73 58 Q73 66 55 70 Q37 66 37 58Z" fill="#2a1204" opacity=".85"/>
+      <!-- Ojos -->
+      <ellipse cx="45" cy="44" rx="5" ry="4" fill="#fff"/>
+      <ellipse cx="65" cy="44" rx="5" ry="4" fill="#fff"/>
+      <circle cx="46" cy="45" r="3" fill="#2a1204"/>
+      <circle cx="66" cy="45" r="3" fill="#2a1204"/>
+      <circle cx="47" cy="44" r="1" fill="#fff"/>
+      <circle cx="67" cy="44" r="1" fill="#fff"/>
+      <!-- Cejas -->
+      <path d="M40 38 Q45 35 50 38" stroke="#1a0a04" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M60 38 Q65 35 70 38" stroke="#1a0a04" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- Nariz -->
+      <path d="M52 48 Q55 55 58 48" stroke="#b06040" stroke-width="1.5" fill="none"/>
+      <!-- Boca -->
+      <path d="M46 58 Q55 63 64 58" stroke="#8B4520" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
   </div>
-</div>
+
+  <!-- CIRILO: Barba completa, lentes oscuros, radio en hombro -->
+  <div class="char-c">
+    <svg viewBox="0 0 110 200" xmlns="http://www.w3.org/2000/svg" width="110" height="200">
+      <ellipse cx="55" cy="197" rx="28" ry="5" fill="rgba(0,0,0,.2)"/>
+      <rect x="30" y="175" width="20" height="18" rx="4" fill="#4a3520"/>
+      <rect x="60" y="175" width="20" height="18" rx="4" fill="#4a3520"/>
+      <rect x="28" y="183" width="24" height="6" rx="3" fill="#3a2810"/>
+      <rect x="58" y="183" width="24" height="6" rx="3" fill="#3a2810"/>
+      <rect x="32" y="120" width="22" height="60" rx="4" fill="#E8650A"/>
+      <rect x="56" y="120" width="22" height="60" rx="4" fill="#E8650A"/>
+      <rect x="30" y="165" width="26" height="4" rx="2" fill="#ccc" opacity=".7"/>
+      <rect x="54" y="165" width="26" height="4" rx="2" fill="#ccc" opacity=".7"/>
+      <rect x="24" y="75" width="62" height="52" rx="8" fill="#E8650A"/>
+      <rect x="40" y="80" width="16" height="12" rx="3" fill="#CF5800" opacity=".8"/>
+      <!-- Radio en hombro der -->
+      <rect x="78" y="68" width="12" height="22" rx="3" fill="#1a1a1a"/>
+      <rect x="79" y="70" width="10" height="5" rx="1" fill="#333"/>
+      <circle cx="84" cy="77" r="2.5" fill="#00ff88" opacity=".8"/>
+      <line x1="84" y1="62" x2="84" y2="70" stroke="#555" stroke-width="2"/>
+      <rect x="24" y="112" width="62" height="8" rx="4" fill="#1a1a1a"/>
+      <rect x="50" y="113" width="10" height="6" rx="2" fill="#555"/>
+      <rect x="22" y="92" width="66" height="5" rx="2" fill="#ccc" opacity=".65"/>
+      <rect x="8" y="75" width="18" height="44" rx="8" fill="#E8650A"/>
+      <rect x="6" y="112" width="22" height="14" rx="6" fill="#1a1a1a"/>
+      <rect x="84" y="75" width="18" height="44" rx="8" fill="#E8650A"/>
+      <rect x="84" y="112" width="20" height="14" rx="6" fill="#1a1a1a"/>
+      <rect x="46" y="60" width="18" height="18" rx="6" fill="#b87848"/>
+      <ellipse cx="55" cy="45" rx="23" ry="25" fill="#b87848"/>
+      <ellipse cx="32" cy="46" rx="5" ry="7" fill="#a86838"/>
+      <ellipse cx="78" cy="46" rx="5" ry="7" fill="#a86838"/>
+      <!-- Cabello -->
+      <path d="M32 30 Q55 16 78 30 Q78 20 55 16 Q32 20 32 30Z" fill="#0f0804"/>
+      <path d="M32 30 Q28 26 30 36" fill="#0f0804"/>
+      <path d="M78 30 Q82 26 80 36" fill="#0f0804"/>
+      <!-- Barba completa -->
+      <path d="M34 52 Q55 72 76 52 Q80 62 55 76 Q30 62 34 52Z" fill="#0f0804" opacity=".9"/>
+      <path d="M34 52 Q30 48 32 56" fill="#0f0804" opacity=".9"/>
+      <path d="M76 52 Q80 48 78 56" fill="#0f0804" opacity=".9"/>
+      <!-- Lentes oscuros -->
+      <rect x="36" y="38" width="16" height="10" rx="4" fill="#111" opacity=".95"/>
+      <rect x="58" y="38" width="16" height="10" rx="4" fill="#111" opacity=".95"/>
+      <line x1="52" y1="43" x2="58" y2="43" stroke="#333" stroke-width="2"/>
+      <line x1="36" y1="43" x2="30" y2="43" stroke="#333" stroke-width="2"/>
+      <line x1="74" y1="43" x2="80" y2="43" stroke="#333" stroke-width="2"/>
+      <rect x="36" y="38" width="16" height="10" rx="4" fill="none" stroke="#555" stroke-width="1"/>
+      <rect x="58" y="38" width="16" height="10" rx="4" fill="none" stroke="#555" stroke-width="1"/>
+      <path d="M52 52 Q55 57 58 52" stroke="#7a4020" stroke-width="1.5" fill="none"/>
+    </svg>
+  </div>
+
+  <!-- JUAN CARLOS: Casco puesto, lentes transparentes, sosteniendo tablet -->
+  <div class="char-jc">
+    <svg viewBox="0 0 110 200" xmlns="http://www.w3.org/2000/svg" width="110" height="200">
+      <ellipse cx="55" cy="197" rx="28" ry="5" fill="rgba(0,0,0,.2)"/>
+      <rect x="30" y="175" width="20" height="18" rx="4" fill="#4a3520"/>
+      <rect x="60" y="175" width="20" height="18" rx="4" fill="#4a3520"/>
+      <rect x="28" y="183" width="24" height="6" rx="3" fill="#3a2810"/>
+      <rect x="58" y="183" width="24" height="6" rx="3" fill="#3a2810"/>
+      <rect x="32" y="120" width="22" height="60" rx="4" fill="#E8650A"/>
+      <rect x="56" y="120" width="22" height="60" rx="4" fill="#E8650A"/>
+      <rect x="30" y="165" width="26" height="4" rx="2" fill="#ccc" opacity=".7"/>
+      <rect x="54" y="165" width="26" height="4" rx="2" fill="#ccc" opacity=".7"/>
+      <rect x="24" y="75" width="62" height="52" rx="8" fill="#E8650A"/>
+      <rect x="40" y="80" width="16" height="12" rx="3" fill="#CF5800" opacity=".8"/>
+      <!-- Tablet en manos -->
+      <rect x="28" y="90" width="30" height="22" rx="3" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+      <rect x="30" y="92" width="26" height="16" rx="2" fill="#2a4a8a" opacity=".8"/>
+      <rect x="22" y="112" width="62" height="8" rx="4" fill="#1a1a1a"/>
+      <rect x="50" y="113" width="10" height="6" rx="2" fill="#555"/>
+      <rect x="22" y="92" width="66" height="5" rx="2" fill="#ccc" opacity=".65"/>
+      <!-- Brazos sosteniendo tablet -->
+      <rect x="8" y="82" width="18" height="38" rx="7" fill="#E8650A"/>
+      <rect x="6" y="108" width="22" height="14" rx="6" fill="#1a1a1a"/>
+      <rect x="84" y="82" width="18" height="38" rx="7" fill="#E8650A"/>
+      <rect x="84" y="108" width="20" height="14" rx="6" fill="#1a1a1a"/>
+      <!-- Radio en cintura -->
+      <rect x="64" y="100" width="10" height="16" rx="3" fill="#222"/>
+      <rect x="46" y="60" width="18" height="18" rx="6" fill="#c09060"/>
+      <ellipse cx="55" cy="45" rx="22" ry="23" fill="#c09060"/>
+      <ellipse cx="33" cy="46" rx="4" ry="6" fill="#b08050"/>
+      <ellipse cx="77" cy="46" rx="4" ry="6" fill="#b08050"/>
+      <!-- Casco blanco puesto -->
+      <path d="M30 36 Q55 12 80 36 Q82 30 55 24 Q28 30 30 36Z" fill="#f0f0f0"/>
+      <ellipse cx="55" cy="36" rx="27" ry="9" fill="#e8e8e8"/>
+      <rect x="28" y="34" width="54" height="6" rx="3" fill="#ddd"/>
+      <!-- Logo casco -->
+      <circle cx="55" cy="28" r="5" fill="#0f3460"/>
+      <text x="55" y="31" text-anchor="middle" font-size="5" fill="#FF7A00" font-weight="bold">P</text>
+      <!-- Lentes transparentes/safety -->
+      <rect x="36" y="42" width="15" height="9" rx="3" fill="rgba(150,200,255,.35)" stroke="#aaa" stroke-width="1"/>
+      <rect x="59" y="42" width="15" height="9" rx="3" fill="rgba(150,200,255,.35)" stroke="#aaa" stroke-width="1"/>
+      <line x1="51" y1="46" x2="59" y2="46" stroke="#aaa" stroke-width="1.5"/>
+      <!-- Cabello oscuro bajo casco -->
+      <path d="M33 36 Q33 40 32 44" stroke="#1a0a04" stroke-width="3" fill="none"/>
+      <path d="M77 36 Q77 40 78 44" stroke="#1a0a04" stroke-width="3" fill="none"/>
+      <!-- Nariz y boca -->
+      <path d="M52 52 Q55 58 58 52" stroke="#a07040" stroke-width="1.5" fill="none"/>
+      <path d="M46 60 Q55 65 64 60" stroke="#8B5530" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+</div><!-- /char-slot -->
+  </div><!-- /header-row -->
+</div><!-- /header -->
 
 <!-- GPS compacto -->
 <div class="gps-bar" id="gpsBar">📡 Obteniendo ubicación GPS...</div>
 <div class="gps-coords" id="gpsCoords"></div>
 
-<!-- ══ PASO 1: RECORREDOR ══ -->
-<div class="step-card">
-  <div class="step-label">1 · ¿Quién eres?</div>
-  <div class="rec-btns">
-    <button class="rec-btn" onclick="selRec(this,'Manrique','m')"><span class="dot" id="dot-Manrique"></span>Manrique</button>
-    <button class="rec-btn" onclick="selRec(this,'Cirilo','c')"><span class="dot" id="dot-Cirilo"></span>Cirilo</button>
-    <button class="rec-btn" onclick="selRec(this,'Juan Carlos','jc')"><span class="dot" id="dot-Juan Carlos"></span>Juan Carlos</button>
+<!-- Contador de visitas (oculto, mantiene funcionalidad) -->
+<div id="cnt-panel" class="cnt-panel" style="margin-bottom:10px">
+  <div class="cnt-row">
+    <div><span class="cnt-name" id="cnt-nombre"></span><br><span class="cnt-status" id="cnt-status"></span></div>
+    <div style="text-align:right"><div class="cnt-big" id="cnt-num">0</div><div class="cnt-sub" id="cnt-sub"></div></div>
   </div>
-  <div class="cnt-panel" id="cnt-panel">
-    <div class="cnt-row">
-      <div><span class="cnt-name" id="cnt-nombre"></span><br><span class="cnt-status" id="cnt-status"></span></div>
-      <div style="text-align:right"><div class="cnt-big" id="cnt-num">0</div><div class="cnt-sub" id="cnt-sub"></div></div>
-    </div>
-    <div class="pbar"><div class="pfill" id="cnt-bar" style="width:0%"></div></div>
-  </div>
+  <div class="pbar"><div class="pfill" id="cnt-bar" style="width:0%"></div></div>
 </div>
 
 <!-- ══ PASO 2: TIPO DE REGISTRO ══ -->
@@ -1085,7 +1646,7 @@ body.night .chk-row.on{background:#052e1640}
 <div class="foto-card">
   <div class="foto-title">📸 Evidencia Fotográfica</div>
   <div class="foto-upload-area" onclick="document.getElementById('fotoInput').click()">
-    <input type="file" id="fotoInput" accept="image/*" capture="environment" multiple onchange="agregarFotos(event)">
+    <input type="file" id="fotoInput" accept="image/*" capture="environment" onchange="agregarFotos(event)">
     <span class="foto-icon">📷</span>
     <div class="foto-label">Toca para tomar foto o seleccionar</div>
     <div class="foto-sub">Puedes agregar varias fotos como evidencia</div>
@@ -1099,6 +1660,7 @@ body.night .chk-row.on{background:#052e1640}
 <!-- MODO ALARMA BTN - visitas -->
 <button class="alarm-fab" onclick="abrirAlarma()">🚨 MODO ALARMA</button>
 
+</div><!-- /formContent -->
 </div><!-- /view-visitas -->
 
 <!-- ══ VIEW: CATÁLOGO DE POZOS ══ -->
@@ -1339,6 +1901,7 @@ body.night .chk-row.on{background:#052e1640}
     <button class="hist-filter" onclick="filtrarHist('Manrique',this)">Manrique</button>
     <button class="hist-filter" onclick="filtrarHist('Cirilo',this)">Cirilo</button>
     <button class="hist-filter" onclick="filtrarHist('Juan Carlos',this)">Juan Carlos</button>
+    <button class="hist-filter" onclick="filtrarHist('alarmas',this)" style="background:#dc2626;color:#fff;border-color:#dc2626;font-weight:900">🚨 M.A.</button>
   </div>
 
   <div class="hist-count" id="histCount"></div>
@@ -1563,6 +2126,17 @@ body.night .chk-row.on{background:#052e1640}
       <div class="alarm-title">MODO ALARMA</div>
       <div class="alarm-sub">Selecciona el tipo de emergencia</div>
     </div>
+
+    <!-- Identificación (solo visible en modo visitas) -->
+    <div id="alarm-quien-wrap" style="display:none;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px">👷 ¿Quién reporta?</div>
+      <div style="display:flex;gap:8px">
+        <button class="alarm-quien-btn" onclick="selAlarmQuien(this,'Manrique')">Manrique</button>
+        <button class="alarm-quien-btn" onclick="selAlarmQuien(this,'Cirilo')">Cirilo</button>
+        <button class="alarm-quien-btn" onclick="selAlarmQuien(this,'Juan Carlos')">Juan Carlos</button>
+      </div>
+    </div>
+
     <div class="alarm-options">
       <button class="alarm-opt" onclick="selAlarm(this,'PARO DE MTC')"><span class="alarm-opt-icon">🛑</span><span class="alarm-opt-txt">PARO DE MTC</span></button>
       <button class="alarm-opt" onclick="selAlarm(this,'BAJA PRESIÓN')"><span class="alarm-opt-icon">📉</span><span class="alarm-opt-txt">BAJA PRESIÓN</span></button>
@@ -1674,7 +2248,7 @@ function showTab(id,btn){
 
 function selRec(btn,nombre,theme){
   document.querySelectorAll('.rec-btn').forEach(function(b){b.classList.remove('sel')});
-  btn.classList.add('sel');
+  if(btn) btn.classList.add('sel');
   REC=nombre;
   // Remove all themes
   THEMES.forEach(function(t){document.body.classList.remove(t)});
@@ -1682,6 +2256,10 @@ function selRec(btn,nombre,theme){
   // Update header subtitle
   var subs={'Manrique':'🌊 Plataforma Offshore · Cuichapa','Cirilo':'🏭 Refinería · Cuichapa','Juan Carlos':'🛢 Producción de Campo · Cuichapa'};
   document.getElementById('headerSub').textContent=subs[nombre]||'Campo Cuichapa';
+  // Show name badge in header
+  var badge=document.getElementById('recBadge');
+  var badgeName=document.getElementById('recBadgeName');
+  if(badge&&badgeName){badge.style.display='block';badgeName.textContent='👷 '+nombre;}
   mostrarContador(nombre);
 }
 
@@ -1699,7 +2277,7 @@ function agregarVisita(n,p){var v=getVisitas(n);v.push({pozo:p,fecha:new Date().
 
 function mostrarContador(nombre){
   var i=getCicloInfo(nombre),n=getVisitas(nombre).length;
-  document.getElementById('cnt-panel').className='cnt-panel show';
+  var cp=document.getElementById('cnt-panel');if(cp)cp.className='cnt-panel show';
   document.getElementById('cnt-nombre').textContent=nombre;
   if(i.trabajando){
     document.getElementById('cnt-status').innerHTML='🟢 Día '+i.diaEnCiclo+' de 14 · desde '+i.iniStr;
@@ -1712,6 +2290,70 @@ function mostrarContador(nombre){
     document.getElementById('cnt-sub').textContent='En descanso';
     document.getElementById('cnt-bar').style.cssText='width:100%;background:linear-gradient(90deg,#f59e0b,#fcd34d)';
   }
+}
+
+// ── Selector de perfil ───────────────────────────
+function selProfile(nombre, theme, tipo){
+  if(tipo === 'auth'){
+    // Superintendente o Jefe → login
+    var target = (nombre === 'Superintendente') ? 'super' : 'jefe';
+    requireLogin(target);
+    return;
+  }
+  // Recorredor → ocultar picker, pre-seleccionar y mostrar form
+  var picker = document.getElementById('profilePicker');
+  if(picker){
+    picker.style.transition = 'opacity .3s,transform .3s';
+    picker.style.opacity = '0';
+    picker.style.transform = 'translateY(-10px)';
+    setTimeout(function(){
+      picker.style.display = 'none';
+      // Mostrar el contenido del formulario
+      var formContent = document.getElementById('formContent');
+      if(formContent){
+        formContent.style.display = 'block';
+        formContent.style.animation = 'fadeUp .4s ease both';
+        // Mostrar botón de enviar
+        var sf = document.getElementById('sendFixed');
+        if(sf) sf.style.display = 'block';
+        // Re-trigger well picker (was hidden inside display:none)
+        var wp = document.getElementById('wellPicker');
+        if(wp && W==='???') wp.classList.add('show');
+        // Re-populate well list if empty
+        var sugg = document.getElementById('wpSuggestions');
+        if(sugg && !sugg.children.length){
+          var TODOS=['19','106D','119','128','139','167','172','179','187','191','197','201','213','224','324','326','327','342','346','350','352','356','359','363','364','367','373','376','385','500','502','504','505','601','602','603'];
+          sugg.innerHTML=TODOS.map(function(w){
+            return '<div class="wp-item" onclick="setWellFromPicker(\'' + w + '\')"><span class="wp-item-icon">🛢</span><span class="wp-item-num">C-' + w + '</span></div>';
+          }).join('');
+        }
+      }
+      // Desbloquear sidebar
+      document.querySelector('.sidebar').classList.add('sidebar-unlocked');
+      // Pre-seleccionar el recorredor automáticamente
+      selRec(null, nombre, theme);
+    }, 280);
+  }
+}
+
+function volverAlPicker(){
+  var picker = document.getElementById('profilePicker');
+  var formContent = document.getElementById('formContent');
+  if(picker){
+    picker.style.display = 'block';
+    picker.style.opacity = '0';
+    picker.style.transform = 'translateY(-10px)';
+    setTimeout(function(){
+      picker.style.transition = 'opacity .3s,transform .3s';
+      picker.style.opacity = '1';
+      picker.style.transform = 'translateY(0)';
+    }, 10);
+  }
+  if(formContent) formContent.style.display = 'none';
+  // Reset recorredor y bloquear sidebar
+  REC = '';
+  document.body.className = document.body.className.replace(/\b[mcj]+-active\b/g,'').trim();
+  var sb=document.querySelector('.sidebar');if(sb)sb.classList.remove('sidebar-unlocked');
 }
 
 // ── Botones de estado grandes ─────────────────────
@@ -1832,6 +2474,7 @@ var fotos = [];
 
 function toggleVacModal(){
   var m = document.getElementById('vacModal');
+  if(!m) return;
   m.classList.toggle('open');
   if(m.classList.contains('open')) renderVacStatus();
 }
@@ -1842,7 +2485,7 @@ function selVacRec(btn, nombre){
   vacRecSel = nombre;
   // Set today as default date
   var today = new Date().toISOString().slice(0,10);
-  document.getElementById('vacFecha').value = today;
+  var vf=document.getElementById('vacFecha'); if(vf) vf.value = today;
   renderVacStatus();
 }
 
@@ -1855,14 +2498,14 @@ function setVacaciones(nombre, arr){
 
 function guardarVacaciones(){
   if(!vacRecSel){ alert('Selecciona el recorredor'); return; }
-  var fecha = document.getElementById('vacFecha').value;
-  var dias  = parseInt(document.getElementById('vacDias').value);
+  var vfEl=document.getElementById('vacFecha'); if(!vfEl) return; var fecha = vfEl.value;
+  var vdEl=document.getElementById('vacDias'); if(!vdEl) return; var dias=parseInt(vdEl.value);
   if(!fecha){ alert('Selecciona la fecha de inicio'); return; }
   if(!dias || dias < 1){ alert('Ingresa el número de días'); return; }
   var arr = getVacaciones(vacRecSel);
   arr.push({ inicio: fecha, dias: dias });
   setVacaciones(vacRecSel, arr);
-  document.getElementById('vacDias').value = '';
+  var vdClr=document.getElementById('vacDias'); if(vdClr) vdClr.value='';
   renderVacStatus();
   // Refresh dots and counter
   ['Manrique','Cirilo','Juan Carlos'].forEach(function(n){
@@ -1898,7 +2541,7 @@ function renderVacStatus(){
         +'</div>';
     });
   });
-  document.getElementById('vacStatus').innerHTML = html || (vacRecSel ? '<div style="font-size:12px;color:var(--txt2);margin-top:8px">Sin vacaciones registradas para '+vacRecSel+'</div>' : '');
+  var vsEl=document.getElementById('vacStatus'); if(vsEl) vsEl.innerHTML = html || (vacRecSel ? '<div style="font-size:12px;color:var(--txt2);margin-top:8px">Sin vacaciones registradas para '+vacRecSel+'</div>' : '');
 }
 
 // Adjust cycle info to account for vacation days
@@ -1951,24 +2594,28 @@ var FOTOS_KEY = 'cuichapa_fotos_temp';
 })();
 
 function comprimirImagen(file, callback){
-  var maxW = 1280, maxH = 1280, quality = 0.72;
+  // Reducido a 900px para guardar más rápido sin perder calidad visible
+  var maxW = 900, maxH = 900, quality = 0.75;
   var reader = new FileReader();
   reader.onerror = function(){ callback(null); };
   reader.onload = function(ev){
     var img = new Image();
     img.onerror = function(){ callback(null); };
     img.onload = function(){
-      var w = img.width, h = img.height;
-      if(w > maxW || h > maxH){
-        var ratio = Math.min(maxW/w, maxH/h);
-        w = Math.round(w*ratio); h = Math.round(h*ratio);
+      var w = img.width, hh = img.height;
+      if(w > maxW || hh > maxH){
+        var ratio = Math.min(maxW/w, maxH/hh);
+        w = Math.round(w*ratio); hh = Math.round(hh*ratio);
       }
-      var canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      var ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      var data = canvas.toDataURL('image/jpeg', quality);
-      callback(data);
+      // Usar setTimeout para no bloquear UI
+      setTimeout(function(){
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = hh;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, hh);
+        var data = canvas.toDataURL('image/jpeg', quality);
+        callback(data);
+      }, 0);
     };
     img.src = ev.target.result;
   };
@@ -1977,30 +2624,40 @@ function comprimirImagen(file, callback){
 
 function agregarFotos(e){
   var files = Array.from(e.target.files);
+  e.target.value = ''; // reset inmediato para poder tomar otra foto
   if(!files.length) return;
 
-  // Mostrar indicador de carga
   var count = document.getElementById('fotoCount');
-  if(count) count.textContent = '⏳ Procesando '+files.length+' foto'+(files.length>1?'s':'')+'...';
+  if(count) count.textContent = '⏳ Guardando foto...';
 
   var procesadas = 0;
+  var total = files.filter(function(f){ return f.type.startsWith('image/'); }).length;
+  if(!total){ if(count) count.textContent=''; return; }
+
   files.forEach(function(file){
-    // Solo imágenes
-    if(!file.type.startsWith('image/')){ procesadas++; return; }
+    if(!file.type.startsWith('image/')){ return; }
     comprimirImagen(file, function(data){
       procesadas++;
       if(data){
         fotos.push({ data: data, nombre: file.name, size: data.length });
-        // Guardar en localStorage para persistencia
-        try{ localStorage.setItem(FOTOS_KEY, JSON.stringify(fotos)); }catch(ex){
-          // Si está lleno, quitar la última foto antigua
-          if(fotos.length > 1){ fotos.shift(); }
+        // Intentar guardar, si no hay espacio reducir calidad de anteriores
+        try{
+          localStorage.setItem(FOTOS_KEY, JSON.stringify(fotos));
+        }catch(ex){
+          // localStorage lleno: quitar fotos viejas hasta que quepa
+          while(fotos.length > 1){
+            fotos.shift();
+            try{ localStorage.setItem(FOTOS_KEY, JSON.stringify(fotos)); break; }catch(e2){}
+          }
         }
+        // Mostrar miniatura de inmediato sin esperar al resto
+        renderFotos();
       }
-      if(procesadas === files.length) renderFotos();
+      if(procesadas === total){
+        if(count) count.textContent = fotos.length + ' foto'+(fotos.length!==1?'s':'')+' lista'+(fotos.length!==1?'s':'');
+      }
     });
   });
-  e.target.value = ''; // reset input para permitir subir mismo archivo
 }
 
 function borrarFoto(idx){
@@ -2229,7 +2886,7 @@ var WELL_COORDS_ALL={
   "102":{"lat":17.960972,"lon":-94.287356},
   "103":{"lat":17.955919,"lon":-94.277472},
   "105":{"lat":17.962603,"lon":-94.290764},
-  "106":{"lat":17.957444,"lon":-94.287753},
+  "106D":{"lat":17.957444,"lon":-94.287753},
   "107":{"lat":17.953797,"lon":-94.280869},
   "108":{"lat":17.951783,"lon":-94.277581},
   "110":{"lat":17.957683,"lon":-94.280156},
@@ -2475,7 +3132,7 @@ function doLogin(){
 
   // AntonioS — accede a TODO incluyendo Superintendente
   if(u==='AntonioS'&&p==='Mexico'){
-    loggedIn=true; loggedUser='AntonioS';
+    loggedIn=true; loggedUser='AntonioS'; var sb=document.querySelector('.sidebar');if(sb)sb.classList.add('sidebar-unlocked');
     document.getElementById('loginOverlay').classList.remove('open');
     switchView(loginTarget);
 
@@ -2487,7 +3144,7 @@ function doLogin(){
       document.getElementById('loginPass').value='';
       document.getElementById('loginPass').focus();
     } else {
-      loggedIn=true; loggedUser='JaimeG';
+      loggedIn=true; loggedUser='JaimeG'; var sb=document.querySelector('.sidebar');if(sb)sb.classList.add('sidebar-unlocked');
       document.getElementById('loginOverlay').classList.remove('open');
       switchView(loginTarget);
     }
@@ -2733,7 +3390,7 @@ var POZO_DEFAULTS={
   "102":{"lat":"17.960972°","lon":"-94.287356°","area":"Cuichapa","profundidad":"1900 m","tipo":"Vertical","año":"1966","estado":"TAPONADO"},
   "103":{"lat":"17.955919°","lon":"-94.277472°","area":"Cuichapa","profundidad":"1612.12 m","tipo":"Vertical","año":"1966","estado":"TAPONADO"},
   "105":{"lat":"17.962603°","lon":"-94.290764°","area":"Cuichapa","profundidad":"2058.5 m","tipo":"Vertical","año":"1966","estado":"TAPONADO"},
-  "106":{"lat":"17.957444°","lon":"-94.287753°","area":"Cuichapa","profundidad":"1875 m","tipo":"Vertical","año":"1985","estado":"CERRADO"},
+  "106D":{"lat":"17.957444°","lon":"-94.287753°","area":"Cuichapa","profundidad":"1875 m","tipo":"Vertical","año":"1985","estado":"CERRADO"},
   "107":{"lat":"17.953797°","lon":"-94.280869°","area":"Cuichapa","profundidad":"1643.6 m","tipo":"Vertical","año":"1967","estado":"CERRADO"},
   "108":{"lat":"17.951783°","lon":"-94.277581°","area":"Cuichapa","profundidad":"1475 m","tipo":"Vertical","año":"1969","estado":"CERRADO"},
   "110":{"lat":"17.957683°","lon":"-94.280156°","area":"Cuichapa","profundidad":"1736.3 m","tipo":"Vertical","año":"1967","estado":"TAPONADO"},
@@ -3037,8 +3694,8 @@ function editarInfo(seccion){
 }
 
 // ══ INIT ══
-var WELLS_ALL=['1','2','3','5','6','8','10','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','101','102','103','105','106','107','108','110','111','112','113','114','115','116','117','118','119','120','121','122','123','124','125','126','127','128','129','133','134','135','136','137','138','139','140','141','142','143','144','145','146','147','148','149','150','151','152','153','154','156','157','158','159','163','164','165','166','167','168','169','170','171','172','173','174','175','176','178','179','180','181','182','183','184','185','186','187','188','189','190','191','192','193','195','196','197','198','199','200','201','202','203','204','205','206','207','208','209','211','212','213','214','215','216','217','218','219','220','221','224','225','301','302','303','304','305','306','307','308','309','310','311','313','314','316','317','318','319','320','321','322','323','324','325','326','327','328','329','330','331','333','334','335','336','337','338','339','341','342','343','344','345','346','347','349','350','351','352','353','354','355','356','358','359','360','361','363','364','365','366','367','368','369','370','371','372','373','374','376','377','378','381','382','383','385','386','387','389','390','391','392','393','394','395','396','397','399','400','401','402','403','404','406','407','500','501','502','503','504','505','506','507','508','509','513','601','602','603'];
-var WELLS=['19','106','119','128','139','167','172','179','187','191','197','201',
+var WELLS_ALL=['1','2','3','5','6','8','10','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','101','102','103','105','106D','107','108','110','111','112','113','114','115','116','117','118','119','120','121','122','123','124','125','126','127','128','129','133','134','135','136','137','138','139','140','141','142','143','144','145','146','147','148','149','150','151','152','153','154','156','157','158','159','163','164','165','166','167','168','169','170','171','172','173','174','175','176','178','179','180','181','182','183','184','185','186','187','188','189','190','191','192','193','195','196','197','198','199','200','201','202','203','204','205','206','207','208','209','211','212','213','214','215','216','217','218','219','220','221','224','225','301','302','303','304','305','306','307','308','309','310','311','313','314','316','317','318','319','320','321','322','323','324','325','326','327','328','329','330','331','333','334','335','336','337','338','339','341','342','343','344','345','346','347','349','350','351','352','353','354','355','356','358','359','360','361','363','364','365','366','367','368','369','370','371','372','373','374','376','377','378','381','382','383','385','386','387','389','390','391','392','393','394','395','396','397','399','400','401','402','403','404','406','407','500','501','502','503','504','505','506','507','508','509','513','601','602','603'];
+var WELLS=['19','106D','119','128','139','167','172','179','187','191','197','201',
   '213','224','324','326','327','342','346','350','352','356','359','363',
   '364','367','373','376','385','500','502','504','505','601','602','603'];
 var selectedWell=null;
@@ -3054,6 +3711,14 @@ function switchView(id){
   if(id==='visitas'){
     var ic=document.getElementById('icon-visitas');
     if(ic) ic.classList.add('active');
+    // Show picker, hide form when returning to visitas
+    var picker = document.getElementById('profilePicker');
+    var formContent = document.getElementById('formContent');
+    if(picker){ picker.style.display='block'; picker.style.opacity='1'; picker.style.transform=''; }
+    if(formContent) formContent.style.display='none';
+    // Hide send button until form is visible
+    var sf=document.getElementById('sendFixed');
+    if(sf) sf.style.display='none';
   } else if(id==='catalogo'){
     var ic=document.getElementById('icon-catalogo');
     if(ic) ic.classList.add('active');
@@ -3115,28 +3780,203 @@ var fbDB  = null;
 
 // ══ MODO ALARMA ══════════════════════════════════
 var alarmTipoSeleccionado = '';
+var alarmLocTipo = '';
+var alarmQuienSeleccionado = '';
+var ALARM_KEY = 'cuichapa_alarmas_v1';
+
+function getAlarmasLocales(){ try{ return JSON.parse(localStorage.getItem(ALARM_KEY)||'[]'); }catch(e){ return []; } }
+function saveAlarmasLocales(arr){ try{ localStorage.setItem(ALARM_KEY, JSON.stringify(arr)); }catch(e){} }
 
 function abrirAlarma(){
   alarmTipoSeleccionado = '';
+  alarmQuienSeleccionado = '';
   document.querySelectorAll('.alarm-opt').forEach(function(b){ b.classList.remove('selected'); });
+  document.querySelectorAll('.alarm-quien-btn').forEach(function(b){ b.classList.remove('sel'); });
   document.getElementById('alarm-location-wrap').style.display = 'none';
   document.getElementById('alarmLocInput').value = '';
   document.getElementById('alarmSendBtn').disabled = true;
+  var vistaActiva = document.querySelector('.view.active');
+  var esVisitas = vistaActiva && vistaActiva.id === 'view-visitas';
+
+  // Selector de identidad solo para recorredores
+  var quienWrap = document.getElementById('alarm-quien-wrap');
+  if(quienWrap) quienWrap.style.display = esVisitas ? 'block' : 'none';
+  // Pre-seleccionar recorredor si ya está elegido
+  if(esVisitas && REC){
+    alarmQuienSeleccionado = REC;
+    document.querySelectorAll('.alarm-quien-btn').forEach(function(b){
+      if(b.textContent.trim() === REC) b.classList.add('sel');
+    });
+  }
+
+  // Campo de ubicación: solo para Super/Jefe — recorredores usan GPS automático
+  var locWrap = document.getElementById('alarm-location-wrap');
+  if(locWrap) locWrap.dataset.esVisitas = esVisitas ? '1' : '0';
+
   document.getElementById('alarmOverlay').classList.add('open');
 }
+
 function cerrarAlarma(){
   document.getElementById('alarmOverlay').classList.remove('open');
-  alarmTipoSeleccionado = '';
+  alarmTipoSeleccionado = ''; alarmLocTipo = ''; alarmQuienSeleccionado = '';
 }
+
+function selAlarmQuien(btn, nombre){
+  document.querySelectorAll('.alarm-quien-btn').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  alarmQuienSeleccionado = nombre;
+}
+
 function selAlarm(btn, tipo){
   document.querySelectorAll('.alarm-opt').forEach(function(b){ b.classList.remove('selected'); });
   btn.classList.add('selected');
   alarmTipoSeleccionado = tipo;
-  document.getElementById('alarm-location-wrap').style.display = 'block';
+  // Mostrar ubicación solo para Super/Jefe — recorredor usa GPS automático
+  var lw = document.getElementById('alarm-location-wrap');
+  if(lw) lw.style.display = (lw.dataset.esVisitas === '1') ? 'none' : 'block';
   document.getElementById('alarmSendBtn').disabled = false;
-  setTimeout(function(){ document.getElementById('alarmLocInput').focus(); }, 200);
 }
-var alarmLocTipo = '';
+
+function confirmarAlarma(){
+  if(!alarmTipoSeleccionado) return;
+  // En vista visitas: requiere identificación
+  var vistaActiva = document.querySelector('.view.active');
+  var esVisitas = vistaActiva && vistaActiva.id === 'view-visitas';
+  if(esVisitas && !alarmQuienSeleccionado){
+    alert('Selecciona quién reporta la emergencia');
+    return;
+  }
+  document.getElementById('alarmOverlay').classList.remove('open');
+  document.getElementById('alarmConfirmType').textContent = alarmTipoSeleccionado;
+  document.getElementById('alarmConfirmOverlay').classList.add('open');
+}
+
+function cancelarConfirmAlarma(){
+  document.getElementById('alarmConfirmOverlay').classList.remove('open');
+  document.getElementById('alarmOverlay').classList.add('open');
+}
+
+function enviarAlarma(){
+  document.getElementById('alarmConfirmOverlay').classList.remove('open');
+  var ahora = new Date();
+  var horaStr  = ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  var fechaStr = ahora.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+  var quien = alarmQuienSeleccionado || REC || loggedUser || 'Campo';
+  var lw2 = document.getElementById('alarm-location-wrap');
+  var esVisitasEnvio = lw2 && lw2.dataset.esVisitas === '1';
+  var lugar;
+  if(esVisitasEnvio){
+    // Recorredor: manda ubicación GPS en tiempo real
+    if(la){
+      lugar = '📍 '+la.toFixed(6)+', '+lo.toFixed(6)
+        +'\nmaps.google.com/?q='+la+','+lo;
+    } else {
+      lugar = (W && W!=='???') ? 'C-'+W : 'Campo Cuichapa';
+    }
+  } else {
+    // Super/Jefe: NO manda ubicación
+    lugar = '';
+  }
+
+  var alarmaData = {
+    id:       ahora.getTime(),
+    tipo:     alarmTipoSeleccionado,
+    quien:    quien,
+    lugar:    lugar,
+    fecha:    ahora.toISOString(),
+    hora:     horaStr,
+    estado:   'pendiente',
+    esAlarma: true   // marca especial para filtro M.A.
+  };
+
+  // 1. SIEMPRE guardar en historial local primero
+  var arr = getAlarmasLocales();
+  arr.unshift(alarmaData);
+  saveAlarmasLocales(arr);
+
+  // 2. Guardar también en historial principal (para pestaña M.A.)
+  guardarReporte({
+    id:           alarmaData.id,
+    fecha:        alarmaData.fecha,
+    pozo:         lugar,
+    recorredor:   quien,
+    msg:          '🚨 *ALERTA: '+alarmaData.tipo+'*\n📍 '+lugar+'\n👷 '+quien+'\n🕐 '+horaStr,
+    fotos:        [],
+    estado:       'pendiente',
+    ultimoIntento:null,
+    intentos:     0,
+    esAlarma:     true,
+    tipoAlarma:   alarmaData.tipo
+  });
+
+  // 3. Firebase → todos los dispositivos abiertos
+  if(fbDB){
+    fbDB.ref('alarmas/'+alarmaData.id).set(alarmaData).catch(function(){});
+    enviarPushATodos(alarmaData);
+  }
+
+  // 4. Enviar WhatsApp (con cola offline)
+  var msg = '🚨 *ALERTA DE EMERGENCIA*\n━━━━━━━━━━━━━━━━━━\n'
+    +'⚠️ Tipo: *'+alarmTipoSeleccionado+'*\n'
+    +'👷 Reportado por: '+quien+'\n'
+    +(lugar ? '📍 Ubicación: '+lugar+'\n' : '')
+    +'📅 '+fechaStr+' · 🕐 '+horaStr+'\n'
+    +'━━━━━━━━━━━━━━━━━━\n'
+    +'_Campo Cuichapa · Lifting de Mexico_';
+
+  function intentarEnviarAlarmaWA(){
+    return fetch(UM_BASE+'/messages/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'token='+encodeURIComponent(UM_TOKEN)+'&to='+encodeURIComponent(UM_TO)+'&body='+encodeURIComponent(msg)
+    }).then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d && (d.sent==='true'||d.sent===true)){
+        // Marcar como enviado
+        var arr2 = getAlarmasLocales();
+        for(var i=0;i<arr2.length;i++){ if(arr2[i].id===alarmaData.id){ arr2[i].estado='enviado'; break; } }
+        saveAlarmasLocales(arr2);
+        actualizarEstadoReporte(alarmaData.id, 'enviado', new Date().toISOString());
+        renderHistorial();
+      }
+    }).catch(function(){});
+  }
+
+  if(navigator.onLine){
+    intentarEnviarAlarmaWA();
+  } else {
+    showToast('⚠️ Sin señal · Alarma guardada · Se enviará cuando haya señal');
+  }
+
+  showToast('🚨 ALARMA ENVIADA: '+alarmTipoSeleccionado);
+  alarmTipoSeleccionado=''; alarmQuienSeleccionado='';
+
+  // Reintentar cuando vuelva señal
+  window.addEventListener('online', function retryAlarm(){
+    var pending = getAlarmasLocales().filter(function(a){ return a.estado==='pendiente'; });
+    if(pending.length) intentarEnviarAlarmaWA();
+    window.removeEventListener('online', retryAlarm);
+  });
+}
+
+function escucharAlarmas(){
+  if(!fbDB) return;
+  var ts = Date.now();
+  fbDB.ref('alarmas').orderByChild('id').startAt(ts).on('child_added',function(snap){
+    var d=snap.val(); if(!d||d.id<=ts) return;
+    document.getElementById('alarmIncomingType').textContent = d.tipo;
+    document.getElementById('alarmIncomingInfo').textContent =
+      'Reportado por: '+d.quien+'\n📍 '+d.lugar+' · '+d.hora;
+    var el=document.getElementById('alarmIncoming');
+    el.style.display='flex'; el.classList.add('show');
+    if(navigator.vibrate) navigator.vibrate([400,100,400,100,400]);
+  });
+}
+
+function cerrarAlarmaEntrante(){
+  var el=document.getElementById('alarmIncoming');
+  el.classList.remove('show'); el.style.display='none';
+}
 function confirmarAlarma(){
   if(!alarmTipoSeleccionado) return;
   document.getElementById('alarmOverlay').classList.remove('open');
@@ -3461,16 +4301,18 @@ function umSendText(texto, callback){
 
 // ── Enviar imagen por Ultramsg (base64) ───────────
 function umSendImage(base64, caption, callback){
-  // Quitar prefijo data:image/jpeg;base64,
-  var imgData = base64.replace(/^data:image\/[a-z]+;base64,/, '');
-  var body = 'token='   + encodeURIComponent(UM_TOKEN)
-           + '&to='     + encodeURIComponent(UM_TO)
-           + '&image='  + encodeURIComponent(imgData)
-           + '&caption='+ encodeURIComponent(caption||'');
+  // Asegurar que tenga prefijo data:image
+  var imgData = base64.startsWith('data:') ? base64 : 'data:image/jpeg;base64,' + base64;
+  // Usar JSON para evitar que encodeURIComponent corte el base64
   fetch(UM_URL_IMG, {
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body: body
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      token:   UM_TOKEN,
+      to:      UM_TO,
+      image:   imgData,
+      caption: caption || ''
+    })
   })
   .then(function(r){ return r.json(); })
   .then(function(d){ if(callback) callback(!!(d && (d.sent==='true'||d.sent===true))); })
@@ -3652,7 +4494,11 @@ function filtrarHist(f, btn){
 function renderHistorial(){
   var arr = getHistorial();
   var pendientes = getPendientes();
-  if(histFiltro !== 'todos') arr = arr.filter(function(r){ return r.recorredor===histFiltro; });
+  if(histFiltro === 'alarmas'){
+    arr = arr.filter(function(r){ return r.esAlarma; });
+  } else if(histFiltro !== 'todos'){
+    arr = arr.filter(function(r){ return r.recorredor === histFiltro; });
+  }
   var list    = document.getElementById('histList');
   var countEl = document.getElementById('histCount');
   if(!list) return;
@@ -3700,6 +4546,9 @@ function renderHistorial(){
       +'<div class="hist-card-well">C-'+r.pozo+'</div>'
       +'<div class="hist-card-info">'
       +'<span class="hist-card-rec">'+r.recorredor
+      +(r.esAlarma
+        ? '<span style="font-size:10px;background:#dc2626;color:#fff;border-radius:10px;padding:2px 8px;font-weight:900;margin-left:6px">🚨 '+(r.tipoAlarma||'ALARMA')+'</span>'
+        : '')
       +(r.otroDisp
         ? '<span style="font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:10px;padding:2px 8px;font-weight:700;margin-left:6px">📱 Otro dispositivo</span>'
         : '')
@@ -3847,7 +4696,7 @@ function cerrarBanner(){
   if(picker) picker.classList.add('show');
   var sugg=document.getElementById('wpSuggestions');
   if(!sugg) return;
-  var TODOS=['19','106','119','128','139','167','172','179','187','191',
+  var TODOS=['19','106D','119','128','139','167','172','179','187','191',
              '197','201','213','224','324','326','327','342','346','350',
              '352','356','359','363','364','367','373','376','385','500',
              '502','504','505','601','602','603'];
