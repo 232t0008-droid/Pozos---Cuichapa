@@ -2868,14 +2868,14 @@ function toggleChk(key){
 }
 
 function gpsLine(){
-  if(!la||!lo) return '📍 GPS: No disponible';
-  var base='📍 GPS: '+la.toFixed(6)+', '+lo.toFixed(6)+' (±'+ac+'m)\n🗺 maps.google.com/?q='+la+','+lo;
+  if(!la||!lo) return 'GPS: No disponible';
+  var base='GPS: '+la.toFixed(6)+', '+lo.toFixed(6)+' (±'+ac+'m)\n🗺 maps.google.com/?q='+la+','+lo;
   if(W && WELL_COORDS_ALL[W]){
     var wc=WELL_COORDS_ALL[W];
     var dLat=(wc.lat-la)*Math.PI/180;var dLon=(wc.lon-lo)*Math.PI/180;
     var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(la*Math.PI/180)*Math.cos(wc.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
     var dm=6371000*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-    base+='\n📏 Distancia al pozo: '+(dm<1000?Math.round(dm)+'m':(dm/1000).toFixed(2)+'km')+(dm<=100?' ✅':' ⚠️');
+    base+='\n📏 Distancia al pozo: '+(dm<1000?Math.round(dm)+'m':(dm/1000).toFixed(2)+'km')+(dm<=100?' OK':' LEJOS');
   }
   return base;
 }
@@ -3152,11 +3152,10 @@ function enviarTodo(soloPreview){
       var dLat2=(wc2.lat-la)*Math.PI/180; var dLon2=(wc2.lon-lo)*Math.PI/180;
       var a3=Math.sin(dLat2/2)*Math.sin(dLat2/2)+Math.cos(la*Math.PI/180)*Math.cos(wc2.lat*Math.PI/180)*Math.sin(dLon2/2)*Math.sin(dLon2/2);
       var dm2=6371000*2*Math.atan2(Math.sqrt(a3),Math.sqrt(1-a3));
-      distPozo2 = '📏 Distancia al pozo: '+(dm2<1000?Math.round(dm2)+'m':(dm2/1000).toFixed(2)+'km')+(dm2<=100?' ✅':' ⚠️')+'
-';
+      distPozo2 = 'Distancia al pozo: '+(dm2<1000?Math.round(dm2)+'m':(dm2/1000).toFixed(2)+'km')+(dm2<=100?' OK':' LEJOS')+' ';
     }
     var gpsLinea2 = la
-      ? '📍 Ubicación: '+la.toFixed(6)+', '+lo.toFixed(6)+'\n'
+      ? 'Ubicacion: '+la.toFixed(6)+', '+lo.toFixed(6)+'\n'
         +'🗺 maps.google.com/?q='+la+','+lo+'\n'
         +distPozo2
       : '';
@@ -4578,7 +4577,7 @@ function _doEnviarAlarma(){
   var msg = '🚨 *ALERTA DE EMERGENCIA*\n━━━━━━━━━━━━━━━━━━\n'
     +'⚠️ Tipo: *'+alarmTipoSeleccionado+'*\n'
     +'👷 Reportado por: '+quien+'\n'
-    +(lugar ? '📍 Ubicación: '+lugar+'\n' : '')
+    +(lugar ? 'Ubicacion: '+lugar+'\n' : '')
     +'📅 '+fechaStr+' · 🕐 '+horaStr+'\n'
     +'━━━━━━━━━━━━━━━━━━\n'
     +'_Campo Cuichapa · Lifting de Mexico_';
