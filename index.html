@@ -4635,20 +4635,23 @@ function umSendImage(base64, caption, callback){
     for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
     var blob = new Blob([arr],{type:'image/jpeg'});
 
-    // 1. Subir a Cloudinary con upload preset sin firma
-    var fd = new FormData();
-    fd.append('file',           blob, 'foto.jpg');
-    fd.append('upload_preset',  CLD_PRESET);
-    fd.append('folder',         'cuichapa');
+    // 1. Subir a Cloudinary — form-urlencoded con base64
+    var b64str = parts[1]; // solo el base64 sin prefijo
+    var cldBody = 'upload_preset=' + encodeURIComponent(CLD_PRESET)
+                + '&folder=cuichapa'
+                + '&file=' + encodeURIComponent('data:image/jpeg;base64,' + b64str);
 
     fetch('https://api.cloudinary.com/v1_1/' + CLD_CLOUD + '/image/upload', {
       method: 'POST',
-      body: fd
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: cldBody
     })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if(!d || !d.secure_url){
-        console.warn('Cloudinary falló:', JSON.stringify(d));
+        var errMsg = d && d.error ? d.error.message : JSON.stringify(d);
+        console.warn('Cloudinary falló:', errMsg);
+        showToast('⚠️ Cloudinary: ' + errMsg);
         sendImageFormData(base64, caption, callback);
         return;
       }
@@ -4674,6 +4677,7 @@ function umSendImage(base64, caption, callback){
     })
     .catch(function(err){
       console.error('Cloudinary/UM err:', err);
+      showToast('⚠️ Foto: ' + (err.message||'Error al subir'));
       sendImageFormData(base64, caption, callback);
     });
   } catch(e){
