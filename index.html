@@ -3969,6 +3969,16 @@ function abrirAlarma(){
   document.getElementById('alarm-location-wrap').style.display = 'none';
   document.getElementById('alarmLocInput').value = '';
   document.getElementById('alarmSendBtn').disabled = true;
+
+  // Forzar GPS actualizado al abrir la alarma
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(p){ la=p.coords.latitude; lo=p.coords.longitude; ac=Math.round(p.coords.accuracy); console.log('GPS alarma:',la,lo); },
+      function(e){ console.warn('GPS alarma error:', e.message); },
+      {enableHighAccuracy:true, timeout:8000, maximumAge:0}
+    );
+  }
+
   var vistaActiva = document.querySelector('.view.active');
   var esVisitas = vistaActiva && vistaActiva.id === 'view-visitas';
 
@@ -4364,39 +4374,50 @@ var fcmToken = null;
 
 function initFCM(){
   try{
-    if(!firebase.messaging) return;
+    if(!firebase || !firebase.messaging) return;
     fcmMessaging = firebase.messaging(fbApp);
-    // Solicitar permiso de notificaciones
-    Notification.requestPermission().then(function(perm){
-      if(perm === 'granted'){
-        // Obtener token FCM
-        fcmMessaging.getToken({ vapidKey: FCM_VAPID }).then(function(token){
-          if(token){
-            fcmToken = token;
-            // Guardar token en Firebase para poder enviar a este dispositivo
-            var deviceId = localStorage.getItem('device_id') || ('dev_'+Date.now());
-            localStorage.setItem('device_id', deviceId);
-            fbDB.ref('fcm_tokens/'+deviceId).set({
-              token: token,
-              fecha: new Date().toISOString(),
-              ua: navigator.userAgent.substring(0,80)
-            }).catch(function(){});
-          }
-        }).catch(function(e){ console.warn('FCM token error:', e); });
-        // Escuchar mensajes cuando la app está en primer plano
-        fcmMessaging.onMessage(function(payload){
-          if(payload && payload.data){
-            var d = payload.data;
-            document.getElementById('alarmIncomingType').textContent = d.tipo || 'EMERGENCIA';
-            document.getElementById('alarmIncomingInfo').textContent =
-              'Por: ' + (d.quien||'') + ' · Pozo: ' + (d.pozo||'') + ' · ' + (d.hora||'');
-            var el = document.getElementById('alarmIncoming');
-            el.style.display = 'flex'; el.classList.add('show');
-            if(navigator.vibrate) navigator.vibrate([400,100,400,100,400]);
-          }
-        });
-      }
-    }).catch(function(){});
+
+    // Registrar service worker primero
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(function(reg){
+        // Obtener token FCM usando el SW registrado
+        fcmMessaging.getToken({ vapidKey: FCM_VAPID, serviceWorkerRegistration: reg })
+          .then(function(token){
+            if(token){
+              fcmToken = token;
+              console.log('FCM token obtenido:', token.substring(0,20)+'...');
+              var deviceId = localStorage.getItem('device_id') || ('dev_'+Date.now());
+              localStorage.setItem('device_id', deviceId);
+              fbDB.ref('fcm_tokens/'+deviceId).set({
+                token: token,
+                fecha: new Date().toISOString(),
+                ua:    navigator.userAgent.substring(0,80)
+              }).then(function(){ console.log('FCM token guardado en Firebase'); })
+                .catch(function(e){ console.warn('Error guardando token:', e); });
+            } else {
+              console.warn('No se obtuvo token FCM - verificar permisos de notificación');
+            }
+          })
+          .catch(function(e){ console.warn('FCM getToken error:', e.message); });
+      });
+    }
+
+    // Escuchar mensajes en primer plano
+    fcmMessaging.onMessage(function(payload){
+      console.log('Mensaje FCM en primer plano:', payload);
+      var d = (payload && payload.data) ? payload.data : 
+              (payload && payload.notification) ? payload.notification : {};
+      var tipo = d.tipo || (payload.notification && payload.notification.title) || 'EMERGENCIA';
+      var quien = d.quien || '';
+      var lugar = d.lugar || '';
+      var hora = d.hora || '';
+      document.getElementById('alarmIncomingType').textContent = tipo;
+      document.getElementById('alarmIncomingInfo').textContent =
+        (quien ? 'Por: '+quien : '') + (lugar ? ' · 📍 '+lugar.split('\n')[0] : '') + (hora ? ' · '+hora : '');
+      var el = document.getElementById('alarmIncoming');
+      el.style.display = 'flex'; el.classList.add('show');
+      if(navigator.vibrate) navigator.vibrate([400,100,400,100,400]);
+    });
   } catch(e){ console.warn('FCM init error:', e); }
 }
 
