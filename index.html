@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Cuichapa">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.css"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 
@@ -255,6 +256,10 @@ body.night .sidebar{background:#050810;border-right-color:#0f1a28}
 .hist-clear-btn{width:100%;padding:12px;background:var(--surface2);color:var(--red);border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;margin-top:8px}
 .hist-count{font-size:12px;color:var(--txt2);margin-bottom:10px;text-align:center}
 
+@keyframes userPulse{
+  0%,100%{box-shadow:0 0 0 4px rgba(29,78,216,.3)}
+  50%{box-shadow:0 0 0 10px rgba(29,78,216,.05)}
+}
 #mapContainer{
   width:100%;height:420px;border-radius:14px;
   overflow:hidden;border:1.5px solid var(--border);
@@ -2044,7 +2049,10 @@ body.night .chk-row.on{background:#052e1640}
   <div class="map-info-card" id="mapInfoCard">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div class="map-well-title" id="mapWellName" style="margin:0">C-???</div>
-      <button onclick="abrirEnMaps()" style="padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗺 Maps</button>
+      <div style="display:flex;gap:8px">
+        <button onclick="trazarRuta()" id="btnRuta" style="padding:7px 12px;background:#0f3460;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🧭 Ir aquí</button>
+        <button onclick="abrirEnMaps()" style="padding:7px 12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗺 Maps</button>
+      </div>
     </div>
     <div style="display:flex;gap:16px;flex-wrap:wrap">
       <div>
@@ -2059,6 +2067,9 @@ body.night .chk-row.on{background:#052e1640}
         <div style="font-size:10px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px">DMS</div>
         <div style="font-size:12px;color:var(--txt2)" id="mapDMS">—</div>
       </div>
+    </div>
+    <div id="mapDistInfo" style="display:none;margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--txt2)">
+      📏 <span id="mapDistTxt">—</span>
     </div>
   </div>
 
@@ -3658,6 +3669,10 @@ function toDMS(deg, isLat){
 var leafletMap = null;
 var mapMarkers = {};
 var activeMapWell = null;
+var userLocationMarker = null;
+var userLocationCircle = null;
+var routingControl = null;
+var watchId = null;
 
 function initLeafletMap(){
   if(leafletMap) return; // already initialized
@@ -3674,6 +3689,44 @@ function initLeafletMap(){
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
   }).addTo(leafletMap);
+
+  // ── Ubicación del usuario en tiempo real ──────────
+  function updateUserMarker(lat, lon, acc){
+    var userIcon = L.divIcon({
+      className: '',
+      html: '<div style="width:18px;height:18px;background:#1d4ed8;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(29,78,216,.3);animation:userPulse 2s infinite"></div>',
+      iconAnchor: [9, 9]
+    });
+    if(!userLocationMarker){
+      userLocationMarker = L.marker([lat, lon], {icon: userIcon, zIndexOffset: 1000}).addTo(leafletMap);
+      userLocationMarker.bindPopup('<div style="font-weight:700;color:#1d4ed8">📍 Tu ubicación</div><div style="font-size:11px;color:#5a6e90">±'+acc+'m de precisión</div>');
+      userLocationCircle = L.circle([lat, lon], {radius: acc, color: '#1d4ed8', fillColor: '#1d4ed8', fillOpacity: 0.08, weight: 1}).addTo(leafletMap);
+    } else {
+      userLocationMarker.setLatLng([lat, lon]);
+      userLocationMarker.setIcon(userIcon);
+      userLocationCircle.setLatLng([lat, lon]);
+      userLocationCircle.setRadius(acc);
+    }
+    // Update distance to active well
+    if(activeMapWell && WELL_COORDS_ALL[activeMapWell]){
+      var wc = WELL_COORDS_ALL[activeMapWell];
+      var dist = leafletMap.distance([lat,lon],[wc.lat,wc.lon]);
+      var distTxt = dist < 1000 ? Math.round(dist)+'m' : (dist/1000).toFixed(1)+'km';
+      var distEl = document.getElementById('mapDistInfo');
+      var distTxtEl = document.getElementById('mapDistTxt');
+      if(distEl) distEl.style.display = 'block';
+      if(distTxtEl) distTxtEl.textContent = 'Distancia al pozo: '+distTxt;
+    }
+  }
+
+  // Start watching user location
+  if(navigator.geolocation){
+    watchId = navigator.geolocation.watchPosition(
+      function(p){ updateUserMarker(p.coords.latitude, p.coords.longitude, Math.round(p.coords.accuracy)); },
+      function(){},
+      {enableHighAccuracy:true, maximumAge:5000, timeout:10000}
+    );
+  }
 
   // Custom marker icon
   function makeIcon(color, active){
@@ -3778,6 +3831,68 @@ function abrirEnMaps(){
   var card = document.getElementById('mapInfoCard');
   var lat = card.dataset.lat, lon = card.dataset.lon;
   if(lat && lon) window.open('https://maps.google.com/?q='+lat+','+lon,'_blank');
+}
+
+function trazarRuta(){
+  var card = document.getElementById('mapInfoCard');
+  var destLat = parseFloat(card.dataset.lat);
+  var destLon = parseFloat(card.dataset.lon);
+  if(!destLat || !destLon){ alert('Sin coordenadas del pozo'); return; }
+  if(!la || !lo){ alert('Activa el GPS primero'); return; }
+
+  // Remove existing route
+  if(routingControl){ leafletMap.removeControl(routingControl); routingControl = null; }
+
+  routingControl = L.Routing.control({
+    waypoints: [
+      L.latLng(la, lo),
+      L.latLng(destLat, destLon)
+    ],
+    routeWhileDragging: false,
+    addWaypoints: false,
+    draggableWaypoints: false,
+    fitSelectedRoutes: true,
+    show: true,
+    lineOptions: {
+      styles: [{color: '#0f3460', weight: 5, opacity: 0.8}]
+    },
+    createMarker: function(i, wp){
+      if(i === 0){
+        return L.marker(wp.latLng, {
+          icon: L.divIcon({
+            className:'',
+            html:'<div style="width:18px;height:18px;background:#1d4ed8;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>',
+            iconAnchor:[9,9]
+          })
+        }).bindPopup('📍 Tu ubicación');
+      } else {
+        return L.marker(wp.latLng, {
+          icon: L.divIcon({
+            className:'',
+            html:'<div style="width:22px;height:22px;background:#FF7A00;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>',
+            iconAnchor:[11,11]
+          })
+        }).bindPopup('🛢 C-'+activeMapWell);
+      }
+    },
+    router: L.Routing.osrmv1({
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      profile: 'driving'
+    })
+  }).addTo(leafletMap);
+
+  routingControl.on('routesfound', function(e){
+    var r = e.routes[0].summary;
+    var dist = r.totalDistance < 1000 ? Math.round(r.totalDistance)+'m' : (r.totalDistance/1000).toFixed(1)+'km';
+    var mins = Math.round(r.totalTime/60);
+    var distEl = document.getElementById('mapDistInfo');
+    var distTxtEl = document.getElementById('mapDistTxt');
+    if(distEl) distEl.style.display = 'block';
+    if(distTxtEl) distTxtEl.textContent = dist+' · ~'+mins+' min en auto';
+  });
+
+  var btn = document.getElementById('btnRuta');
+  if(btn){ btn.textContent = '✕ Quitar ruta'; btn.onclick = function(){ if(routingControl){ leafletMap.removeControl(routingControl); routingControl=null; } btn.textContent='🧭 Ir aquí'; btn.onclick=trazarRuta; var di=document.getElementById('mapDistInfo'); if(di) di.style.display='none'; }; }
 }
 
 function initMapChips(){
