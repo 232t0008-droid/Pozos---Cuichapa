@@ -1,0 +1,42 @@
+<!-- ═══════════════════════════════════════════════════════
+     PEGA ESTE BLOQUE justo antes de </body> en index.html
+     ═══════════════════════════════════════════════════════ -->
+<script>
+// ── Sonido de alarma para notificaciones ──────────────────
+var _alarmAudio = null;
+var ALARM_B64_DATA = 'REEMPLAZAR_CON_BASE64';
+
+function initAlarmAudio() {
+  if (_alarmAudio) return;
+  try {
+    _alarmAudio = new Audio(ALARM_B64_DATA);
+    _alarmAudio.volume = 1.0;
+    _alarmAudio.loop = false;
+  } catch(e) { console.warn('Audio no disponible:', e); }
+}
+
+function playAlarmSound() {
+  initAlarmAudio();
+  if (!_alarmAudio) return;
+  _alarmAudio.currentTime = 0;
+  _alarmAudio.play().catch(function(e){ console.warn('No se pudo reproducir alarma:', e); });
+}
+
+// Escuchar mensajes del Service Worker para reproducir sonido
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'PLAY_ALARM') {
+      var src = e.data.src || ALARM_B64_DATA;
+      try {
+        var a = new Audio(src);
+        a.volume = 1.0;
+        a.play().catch(function(){});
+      } catch(err){}
+    }
+  });
+}
+
+// Inicializar audio al primer toque del usuario
+document.addEventListener('touchstart', function() { initAlarmAudio(); }, { once: true });
+document.addEventListener('click',      function() { initAlarmAudio(); }, { once: true });
+</script>
