@@ -4051,11 +4051,13 @@ function enviarAlarma(){
   var lugar;
   if(esRecorredor){
     // Recorredor: manda ubicación GPS en tiempo real
-    if(la){
-      lugar = '📍 '+la.toFixed(6)+', '+lo.toFixed(6)
-        +'\nmaps.google.com/?q='+la+','+lo;
+    if(la !== 0 && lo !== 0){
+      lugar = la.toFixed(6)+','+lo.toFixed(6)
+        +'\nhttps://maps.google.com/?q='+la+','+lo;
+    } else if(W && W!=='???'){
+      lugar = 'Pozo C-'+W+' (sin GPS)';
     } else {
-      lugar = (W && W!=='???') ? 'C-'+W : 'Campo Cuichapa (sin GPS)';
+      lugar = 'Campo Cuichapa (sin GPS)';
     }
   } else {
     // Super/Jefe: NO manda ubicación
@@ -4133,6 +4135,8 @@ function enviarAlarma(){
   }
 
   showToast('🚨 ALARMA ENVIADA: '+alarmTipoSeleccionado);
+  tocarSonidoAlarma(); // Sonido de confirmación de envío
+  if(navigator.vibrate) navigator.vibrate([300,100,300,100,600]);
   alarmTipoSeleccionado=''; alarmQuienSeleccionado='';
 
   // Reintentar cuando vuelva señal
@@ -4153,8 +4157,34 @@ function escucharAlarmas(){
       'Reportado por: '+d.quien+'\n📍 '+d.lugar+' · '+d.hora;
     var el=document.getElementById('alarmIncoming');
     el.style.display='flex'; el.classList.add('show');
-    if(navigator.vibrate) navigator.vibrate([400,100,400,100,400]);
+    if(navigator.vibrate) navigator.vibrate([500,200,500,200,500,200,500]);
+    tocarSonidoAlarma();
   });
+}
+
+function tocarSonidoAlarma(){
+  try{
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    function beep(freq, start, dur){
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      o.type = 'square';
+      g.gain.setValueAtTime(0.3, ctx.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      o.start(ctx.currentTime + start);
+      o.stop(ctx.currentTime + start + dur + 0.05);
+    }
+    // Patrón de alarma: 3 pitidos fuertes
+    beep(880, 0,    0.3);
+    beep(880, 0.4,  0.3);
+    beep(880, 0.8,  0.3);
+    beep(1100, 1.2, 0.5);
+    beep(880, 1.9,  0.3);
+    beep(880, 2.3,  0.3);
+    beep(1100, 2.7, 0.8);
+  } catch(e){ console.warn('Audio alarm error:', e); }
 }
 
 function cerrarAlarmaEntrante(){
@@ -4300,6 +4330,10 @@ function solicitarPermisos(){
   if('Notification' in window){
     Notification.requestPermission().then(function(perm){
       if(notifStatus) notifStatus.textContent = perm==='granted' ? '✅' : '❌';
+      if(perm==='granted' && fbDB){
+        // Registrar token FCM ahora que tenemos permiso
+        setTimeout(initFCM, 1000);
+      }
       notifDone = true; checkDone();
     });
   } else {
