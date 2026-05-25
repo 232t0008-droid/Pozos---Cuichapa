@@ -4621,50 +4621,59 @@ function umSendText(texto, callback){
 }
 
 // ── Enviar imagen por Ultramsg (base64) ───────────
+// Cloudinary config (gratis, sin tarjeta, 25GB/mes)
+var CLD_CLOUD  = 'ddnftojl1';
+var CLD_PRESET = 'cuichapa_unsigned';
+
 function umSendImage(base64, caption, callback){
-  // Subir a Imgur (gratis, sin cuenta) → obtener URL → mandar a Ultramsg
   try{
-    var b64clean = base64.replace(/^data:image\/[a-z]+;base64,/, '');
+    var imgData = base64.startsWith('data:') ? base64 : 'data:image/jpeg;base64,'+base64;
+    // Convertir a Blob
+    var parts = imgData.split(',');
+    var bin = atob(parts[1]);
+    var arr = new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+    var blob = new Blob([arr],{type:'image/jpeg'});
 
-    // 1. Subir a Imgur API (anónimo, gratis)
+    // 1. Subir a Cloudinary con upload preset sin firma
     var fd = new FormData();
-    fd.append('image', b64clean);
-    fd.append('type',  'base64');
+    fd.append('file',           blob, 'foto.jpg');
+    fd.append('upload_preset',  CLD_PRESET);
+    fd.append('folder',         'cuichapa');
 
-    fetch('https://api.imgur.com/3/image', {
+    fetch('https://api.cloudinary.com/v1_1/' + CLD_CLOUD + '/image/upload', {
       method: 'POST',
-      headers: { 'Authorization': 'Client-ID 546c25a59c58ad7' },
       body: fd
     })
     .then(function(r){ return r.json(); })
     .then(function(d){
-      if(!d || !d.data || !d.data.link){
-        console.warn('Imgur falló, mandando como FormData directo');
+      if(!d || !d.secure_url){
+        console.warn('Cloudinary falló:', JSON.stringify(d));
         sendImageFormData(base64, caption, callback);
         return;
       }
-      var imgUrl = d.data.link;
-      console.log('Imgur URL:', imgUrl);
+      var imgUrl = d.secure_url;
+      console.log('Cloudinary URL:', imgUrl);
 
       // 2. Mandar URL a Ultramsg
-      var body = 'token='  + encodeURIComponent(UM_TOKEN)
-               + '&to='    + encodeURIComponent(UM_TO)
-               + '&image=' + encodeURIComponent(imgUrl)
+      var body = 'token='   + encodeURIComponent(UM_TOKEN)
+               + '&to='     + encodeURIComponent(UM_TO)
+               + '&image='  + encodeURIComponent(imgUrl)
                + '&caption='+ encodeURIComponent(caption||'');
       return fetch(UM_URL_IMG, {
-        method: 'POST',
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
         body: body
       });
     })
     .then(function(r){ if(r) return r.json(); })
     .then(function(d){
-      if(d){ console.log('UM img resp:', JSON.stringify(d)); }
+      if(d) console.log('UM img resp:', JSON.stringify(d));
       var ok = !!(d && (d.sent==='true'||d.sent===true||d.id));
       if(callback) callback(ok);
     })
     .catch(function(err){
-      console.error('Imgur/UM err:', err);
+      console.error('Cloudinary/UM err:', err);
       sendImageFormData(base64, caption, callback);
     });
   } catch(e){
@@ -4673,7 +4682,7 @@ function umSendImage(base64, caption, callback){
   }
 }
 
-// Fallback: enviar como FormData multipart
+// Fallback: FormData directo a Ultramsg
 function sendImageFormData(base64, caption, callback){
   try{
     var imgData = base64.startsWith('data:') ? base64 : 'data:image/jpeg;base64,'+base64;
