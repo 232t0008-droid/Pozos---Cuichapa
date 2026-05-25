@@ -4036,16 +4036,16 @@ function enviarAlarma(){
   var horaStr  = ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
   var fechaStr = ahora.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
   var quien = alarmQuienSeleccionado || REC || loggedUser || 'Campo';
-  var lw2 = document.getElementById('alarm-location-wrap');
-  var esVisitasEnvio = lw2 && lw2.dataset.esVisitas === '1';
+  // Detectar si es recorredor (tienen REC definido) o Super/Jefe (loggedUser)
+  var esRecorredor = !!(alarmQuienSeleccionado || REC);
   var lugar;
-  if(esVisitasEnvio){
+  if(esRecorredor){
     // Recorredor: manda ubicación GPS en tiempo real
     if(la){
       lugar = '📍 '+la.toFixed(6)+', '+lo.toFixed(6)
         +'\nmaps.google.com/?q='+la+','+lo;
     } else {
-      lugar = (W && W!=='???') ? 'C-'+W : 'Campo Cuichapa';
+      lugar = (W && W!=='???') ? 'C-'+W : 'Campo Cuichapa (sin GPS)';
     }
   } else {
     // Super/Jefe: NO manda ubicación
