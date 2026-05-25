@@ -3833,66 +3833,56 @@ function abrirEnMaps(){
   if(lat && lon) window.open('https://maps.google.com/?q='+lat+','+lon,'_blank');
 }
 
+var rutaPolyline = null;
+
 function trazarRuta(){
   var card = document.getElementById('mapInfoCard');
   var destLat = parseFloat(card.dataset.lat);
   var destLon = parseFloat(card.dataset.lon);
   if(!destLat || !destLon){ alert('Sin coordenadas del pozo'); return; }
-  if(!la || !lo){ alert('Activa el GPS primero'); return; }
+  if(!la || !lo){ alert('Activa el GPS primero para trazar la ruta'); return; }
 
   // Remove existing route
-  if(routingControl){ leafletMap.removeControl(routingControl); routingControl = null; }
-
-  routingControl = L.Routing.control({
-    waypoints: [
-      L.latLng(la, lo),
-      L.latLng(destLat, destLon)
-    ],
-    routeWhileDragging: false,
-    addWaypoints: false,
-    draggableWaypoints: false,
-    fitSelectedRoutes: true,
-    show: true,
-    lineOptions: {
-      styles: [{color: '#0f3460', weight: 5, opacity: 0.8}]
-    },
-    createMarker: function(i, wp){
-      if(i === 0){
-        return L.marker(wp.latLng, {
-          icon: L.divIcon({
-            className:'',
-            html:'<div style="width:18px;height:18px;background:#1d4ed8;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>',
-            iconAnchor:[9,9]
-          })
-        }).bindPopup('📍 Tu ubicación');
-      } else {
-        return L.marker(wp.latLng, {
-          icon: L.divIcon({
-            className:'',
-            html:'<div style="width:22px;height:22px;background:#FF7A00;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>',
-            iconAnchor:[11,11]
-          })
-        }).bindPopup('🛢 C-'+activeMapWell);
-      }
-    },
-    router: L.Routing.osrmv1({
-      serviceUrl: 'https://router.project-osrm.org/route/v1',
-      profile: 'driving'
-    })
-  }).addTo(leafletMap);
-
-  routingControl.on('routesfound', function(e){
-    var r = e.routes[0].summary;
-    var dist = r.totalDistance < 1000 ? Math.round(r.totalDistance)+'m' : (r.totalDistance/1000).toFixed(1)+'km';
-    var mins = Math.round(r.totalTime/60);
-    var distEl = document.getElementById('mapDistInfo');
-    var distTxtEl = document.getElementById('mapDistTxt');
-    if(distEl) distEl.style.display = 'block';
-    if(distTxtEl) distTxtEl.textContent = dist+' · ~'+mins+' min en auto';
-  });
+  if(rutaPolyline){ leafletMap.removeLayer(rutaPolyline); rutaPolyline = null; }
 
   var btn = document.getElementById('btnRuta');
-  if(btn){ btn.textContent = '✕ Quitar ruta'; btn.onclick = function(){ if(routingControl){ leafletMap.removeControl(routingControl); routingControl=null; } btn.textContent='🧭 Ir aquí'; btn.onclick=trazarRuta; var di=document.getElementById('mapDistInfo'); if(di) di.style.display='none'; }; }
+  if(btn){ btn.textContent = '⏳ Calculando...'; }
+
+  var url = 'https://router.project-osrm.org/route/v1/driving/'
+    + lo + ',' + la + ';' + destLon + ',' + destLat
+    + '?overview=full&geometries=geojson&steps=false';
+
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data.routes || !data.routes.length){ throw new Error('Sin ruta'); }
+      var route = data.routes[0];
+      var coords = route.geometry.coordinates.map(function(c){ return [c[1], c[0]]; });
+      var dist = route.distance < 1000 ? Math.round(route.distance)+'m' : (route.distance/1000).toFixed(1)+'km';
+      var mins = Math.round(route.duration/60);
+
+      rutaPolyline = L.polyline(coords, {color:'#0f3460', weight:5, opacity:0.85}).addTo(leafletMap);
+      leafletMap.fitBounds(rutaPolyline.getBounds(), {padding:[30,30]});
+
+      var distEl = document.getElementById('mapDistInfo');
+      var distTxtEl = document.getElementById('mapDistTxt');
+      if(distEl) distEl.style.display = 'block';
+      if(distTxtEl) distTxtEl.textContent = '🛣 ' + dist + ' · ~' + mins + ' min en auto';
+
+      if(btn){ btn.textContent = '✕ Quitar ruta'; btn.onclick = quitarRuta; }
+    })
+    .catch(function(e){
+      alert('No se pudo calcular la ruta. Verifica tu conexión.');
+      if(btn){ btn.textContent = '🧭 Ir aquí'; btn.onclick = trazarRuta; }
+    });
+}
+
+function quitarRuta(){
+  if(rutaPolyline){ leafletMap.removeLayer(rutaPolyline); rutaPolyline = null; }
+  var btn = document.getElementById('btnRuta');
+  if(btn){ btn.textContent = '🧭 Ir aquí'; btn.onclick = trazarRuta; }
+  var di = document.getElementById('mapDistInfo');
+  if(di) di.style.display = 'none';
 }
 
 function initMapChips(){
@@ -5654,6 +5644,7 @@ function setWellFromPicker(num){
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
 
 <script>
 // ── Sonido de alarma para notificaciones ──────────────────
