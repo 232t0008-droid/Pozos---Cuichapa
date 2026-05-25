@@ -950,6 +950,7 @@ body.night .chk-row.on{background:#052e1640}
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -4621,36 +4622,76 @@ function umSendText(texto, callback){
 
 // ── Enviar imagen por Ultramsg (base64) ───────────
 function umSendImage(base64, caption, callback){
-  // Convertir base64 a Blob y enviar como multipart/form-data
-  // Esto evita que el base64 se corrompa con encodeURIComponent
+  // Subir a Imgur (gratis, sin cuenta) → obtener URL → mandar a Ultramsg
+  try{
+    var b64clean = base64.replace(/^data:image\/[a-z]+;base64,/, '');
+
+    // 1. Subir a Imgur API (anónimo, gratis)
+    var fd = new FormData();
+    fd.append('image', b64clean);
+    fd.append('type',  'base64');
+
+    fetch('https://api.imgur.com/3/image', {
+      method: 'POST',
+      headers: { 'Authorization': 'Client-ID 546c25a59c58ad7' },
+      body: fd
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d || !d.data || !d.data.link){
+        console.warn('Imgur falló, mandando como FormData directo');
+        sendImageFormData(base64, caption, callback);
+        return;
+      }
+      var imgUrl = d.data.link;
+      console.log('Imgur URL:', imgUrl);
+
+      // 2. Mandar URL a Ultramsg
+      var body = 'token='  + encodeURIComponent(UM_TOKEN)
+               + '&to='    + encodeURIComponent(UM_TO)
+               + '&image=' + encodeURIComponent(imgUrl)
+               + '&caption='+ encodeURIComponent(caption||'');
+      return fetch(UM_URL_IMG, {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: body
+      });
+    })
+    .then(function(r){ if(r) return r.json(); })
+    .then(function(d){
+      if(d){ console.log('UM img resp:', JSON.stringify(d)); }
+      var ok = !!(d && (d.sent==='true'||d.sent===true||d.id));
+      if(callback) callback(ok);
+    })
+    .catch(function(err){
+      console.error('Imgur/UM err:', err);
+      sendImageFormData(base64, caption, callback);
+    });
+  } catch(e){
+    console.error('umSendImage err:', e);
+    sendImageFormData(base64, caption, callback);
+  }
+}
+
+// Fallback: enviar como FormData multipart
+function sendImageFormData(base64, caption, callback){
   try{
     var imgData = base64.startsWith('data:') ? base64 : 'data:image/jpeg;base64,'+base64;
-    // Convertir data URI a Blob
     var parts = imgData.split(',');
-    var mime  = parts[0].match(/:(.*?);/)[1];
-    var bin   = atob(parts[1]);
-    var arr   = new Uint8Array(bin.length);
+    var bin = atob(parts[1]);
+    var arr = new Uint8Array(bin.length);
     for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-    var blob  = new Blob([arr], {type: mime});
-
+    var blob = new Blob([arr],{type:'image/jpeg'});
     var fd = new FormData();
     fd.append('token',   UM_TOKEN);
     fd.append('to',      UM_TO);
     fd.append('image',   blob, 'foto.jpg');
-    fd.append('caption', caption || '');
-
-    fetch(UM_URL_IMG, { method:'POST', body: fd })
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        console.log('IMG resp:', JSON.stringify(d));
-        var ok = !!(d && (d.sent==='true'||d.sent===true||d.id));
-        if(callback) callback(ok);
-      })
-      .catch(function(err){ console.error('IMG err:',err); if(callback) callback(false); });
-  } catch(e){
-    console.error('umSendImage error:', e);
-    if(callback) callback(false);
-  }
+    fd.append('caption', caption||'');
+    fetch(UM_URL_IMG,{method:'POST',body:fd})
+      .then(function(r){return r.json();})
+      .then(function(d){ if(callback) callback(!!(d&&(d.sent==='true'||d.sent===true||d.id))); })
+      .catch(function(){ if(callback) callback(false); });
+  }catch(e){ if(callback) callback(false); }
 }
 
 // ── Envío completo: texto + fotos ────────────────
