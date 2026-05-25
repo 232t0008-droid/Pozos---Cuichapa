@@ -2867,7 +2867,18 @@ function toggleChk(key){
   }
 }
 
-function gpsLine(){return la?'📍 GPS: '+la.toFixed(6)+', '+lo.toFixed(6)+' (±'+ac+'m)\n🗺 maps.google.com/?q='+la+','+lo:'📍 GPS: No disponible';}
+function gpsLine(){
+  if(!la||!lo) return '📍 GPS: No disponible';
+  var base='📍 GPS: '+la.toFixed(6)+', '+lo.toFixed(6)+' (±'+ac+'m)\n🗺 maps.google.com/?q='+la+','+lo;
+  if(W && WELL_COORDS_ALL[W]){
+    var wc=WELL_COORDS_ALL[W];
+    var dLat=(wc.lat-la)*Math.PI/180;var dLon=(wc.lon-lo)*Math.PI/180;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(la*Math.PI/180)*Math.cos(wc.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+    var dm=6371000*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    base+='\n📏 Distancia al pozo: '+(dm<1000?Math.round(dm)+'m':(dm/1000).toFixed(2)+'km')+(dm<=100?' ✅':' ⚠️');
+  }
+  return base;
+}
 function now(){var d=new Date();return d.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'})+'  '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});}
 function v(id){return document.getElementById(id).value.trim();}
 // ══ VACACIONES ══
@@ -3107,6 +3118,25 @@ function enviarTodo(soloPreview){
   if(!REC){alert('Selecciona tu nombre primero');return}
   // Validar que se haya escogido un pozo
   if(!W || W==='???'){alert('Selecciona el pozo antes de enviar');return}
+
+  // ── Verificación de radio 100m ─────────────────────
+  if(la && lo && WELL_COORDS_ALL[W]){
+    var wc = WELL_COORDS_ALL[W];
+    var R = 6371000; // radio tierra en metros
+    var dLat = (wc.lat - la) * Math.PI / 180;
+    var dLon = (wc.lon - lo) * Math.PI / 180;
+    var a2 = Math.sin(dLat/2)*Math.sin(dLat/2) +
+             Math.cos(la*Math.PI/180)*Math.cos(wc.lat*Math.PI/180)*
+             Math.sin(dLon/2)*Math.sin(dLon/2);
+    var distMetros = R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1-a2));
+    if(distMetros > 100){
+      var distTxt = distMetros < 1000 ? Math.round(distMetros)+'m' : (distMetros/1000).toFixed(2)+'km';
+      var msg100 = "Estas a " + distTxt + " del pozo C-" + W + ". El radio permitido es de 100m. Deseas enviar de todas formas?";
+      if(!confirm(msg100)) return;
+    }
+  }
+  // ──────────────────────────────────────────────────
+
   var ci=getCicloInfo(REC);
   if(!ci.trabajando&&!confirm('Estás en día de descanso. ¿Registrar de todas formas?'))return;
 
@@ -3116,9 +3146,19 @@ function enviarTodo(soloPreview){
     if(!medBls && !medCm){ alert('Llena al menos Barriles o Centímetros'); return; }
     var hr2=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
     // GPS en tiempo real del recorredor
+    var distPozo2 = '';
+    if(la && lo && WELL_COORDS_ALL[W]){
+      var wc2=WELL_COORDS_ALL[W];
+      var dLat2=(wc2.lat-la)*Math.PI/180; var dLon2=(wc2.lon-lo)*Math.PI/180;
+      var a3=Math.sin(dLat2/2)*Math.sin(dLat2/2)+Math.cos(la*Math.PI/180)*Math.cos(wc2.lat*Math.PI/180)*Math.sin(dLon2/2)*Math.sin(dLon2/2);
+      var dm2=6371000*2*Math.atan2(Math.sqrt(a3),Math.sqrt(1-a3));
+      distPozo2 = '📏 Distancia al pozo: '+(dm2<1000?Math.round(dm2)+'m':(dm2/1000).toFixed(2)+'km')+(dm2<=100?' ✅':' ⚠️')+'
+';
+    }
     var gpsLinea2 = la
       ? '📍 Ubicación: '+la.toFixed(6)+', '+lo.toFixed(6)+'\n'
         +'🗺 maps.google.com/?q='+la+','+lo+'\n'
+        +distPozo2
       : '';
     var msg2='🌙 *NIVELES DE GUARDIA*\n🛢 Pozo: *C-'+W+'*\n👷 Recorredor: '+REC+'\n📅 '+now()+'\n'
       +'══════════════════\n'
