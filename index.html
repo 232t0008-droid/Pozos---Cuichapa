@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+<div class="sidebar-item" id="icon-regactividad" onclick="requireLogin('regactividad')" data-tip="Registro de Actividad"><span>📋</span></div><!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1175,6 +1176,9 @@ body.night .chk-row.on{background:#052e1640}
     </svg>
   </div>
 
+  <!-- Registro de Actividad -->
+  <div class="sidebar-icon" id="icon-regactividad" onclick="requireLogin('regactividad')" data-tip="Registro de Actividad" style="font-size:20px">📋</div>
+
   <!-- Historial de reportes -->
   <div class="sidebar-icon sidebar-locked" id="icon-historial" data-tip="Historial de Reportes 🔒" onclick="requireLogin('historial')">
     <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
@@ -1188,303 +1192,167 @@ body.night .chk-row.on{background:#052e1640}
   </div>
 </div>
 
-<div class="wrap">
-<div class="view active" id="view-visitas">
+<button class="toggle-btn" id="modeBtn" onclick="toggleMode()">🌙 Noche</button>
 
+<!-- ══ SIDEBAR ══ -->
 
-<button class="change-profile-btn" id="changeProfileBtn" onclick="volverAlPicker()">‹ Cambiar perfil</button>
+<style>.petro-bg{display:none}</style>
+<div class="petro-bg" id="petroBg"></div>
 
 <!-- ══ SELECTOR DE PERFIL ══ -->
 <style>
-@keyframes ppBoot{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes ppLed{0%,100%{opacity:1}50%{opacity:0.25}}
-@keyframes ppCur{0%,49%{opacity:1}50%,100%{opacity:0}}
-@keyframes ppExpand{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.pp-wrap{background:#0b1220;border-radius:16px;overflow:hidden;border:1px solid #1a2a3a;margin-bottom:14px;animation:ppBoot .4s ease both}
-.pp-hdr{padding:13px 16px;border-bottom:1px solid #1a2a3a;display:flex;align-items:center;justify-content:space-between}
-.pp-logo{height:36px;width:auto;background:#fff;border-radius:4px;padding:3px 7px;display:block}
-.pp-title{font-size:12px;color:#c8d8e8;letter-spacing:1px;font-family:monospace}
-.pp-sub{font-size:8px;color:#4a7a9a;letter-spacing:2px;margin-top:2px;font-family:monospace}
-.pp-led{width:6px;height:6px;border-radius:50%;background:#5bc8a0;display:inline-block;margin-right:5px;animation:ppLed 2s infinite;vertical-align:middle}
-.pp-clock{font-size:12px;color:#5bc8a0;letter-spacing:1px;font-family:monospace;text-align:right}
-.pp-loc{font-size:8px;color:#4a7a9a;letter-spacing:2px;margin-top:2px;font-family:monospace;text-align:right}
-.pp-stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1a2a3a;border-bottom:1px solid #1a2a3a}
-.pp-stat{background:#0b1220;padding:13px 16px}
-.pp-stat-lbl{font-size:8px;letter-spacing:2px;color:#4a7a9a;margin-bottom:5px;font-family:monospace}
-.pp-stat-val{font-size:22px;color:#c8d8e8;font-weight:500;font-family:monospace}
-.pp-stat-unit{font-size:8px;color:#4a7a9a;margin-top:1px;letter-spacing:1px;font-family:monospace}
-.pp-bar{height:2px;background:#1a2a3a;border-radius:1px;margin-top:8px;overflow:hidden}
-.pp-bar-fill{height:100%;border-radius:1px;background:#5bc8a0;width:0;transition:width 1.2s ease}
-/* Accordion */
-.pp-acc{border-top:1px solid #1a2a3a}
-.pp-acc-btn{width:100%;background:#060d18;border:none;padding:13px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .2s}
-.pp-acc-btn:hover{background:#0a1520}
-.pp-acc-btn.open{background:#0a1520}
-.pp-acc-left{display:flex;align-items:center;gap:10px}
-.pp-acc-icon{font-size:16px}
-.pp-acc-title{font-size:10px;letter-spacing:3px;color:#c8d8e8;font-family:monospace;text-transform:uppercase}
-.pp-acc-count{font-size:8px;color:#4a7a9a;letter-spacing:1px;font-family:monospace;margin-left:6px}
-.pp-acc-arrow{font-size:12px;color:#4a7a9a;transition:transform .25s;font-family:monospace}
-.pp-acc-btn.open .pp-acc-arrow{transform:rotate(180deg)}
-.pp-acc-body{display:none;animation:ppExpand .25s ease}
-.pp-acc-body.open{display:block}
-/* Profile grid inside accordion */
-.pp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1a2a3a}
-.pp-btn{background:#0b1220;border:none;padding:14px 10px;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;transition:background .2s;width:100%;border-radius:0}
-.pp-btn:hover{background:#0f1e30}
-.pp-btn:hover .pp-top{opacity:1}
-.pp-top{position:absolute;top:0;left:0;right:0;height:2px;background:#5bc8a0;opacity:0;transition:opacity .25s}
-.pp-dot{width:5px;height:5px;border-radius:50%;background:#1e3a5a;position:absolute;top:8px;right:8px;animation:ppLed 2.5s infinite}
-.pp-ico{width:44px;height:44px;border-radius:8px;border:1px solid #1a2a3a;background:#0d1828;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:8px}
-.pp-name{font-size:10px;color:#c8d8e8;letter-spacing:.5px;margin-bottom:1px;font-family:monospace;text-align:center;line-height:1.3}
-.pp-role{font-size:7px;color:#4a7a9a;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;font-family:monospace;text-align:center}
-.pp-access{width:100%;padding:5px 4px;border:1px solid #1a2a3a;border-radius:3px;color:#4a7a9a;font-size:7px;letter-spacing:1px;text-align:center;font-family:monospace;background:transparent}
-.pp-foot{padding:11px 16px;border-top:1px solid #1a2a3a;display:flex;align-items:center;justify-content:space-between}
-.pp-status{font-size:9px;color:#4a7a9a;letter-spacing:1px;font-family:monospace}
-.pp-pemex{font-size:9px;color:#4a7a9a;letter-spacing:1px;font-family:monospace}
+@keyframes pkFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pkBlink{0%,100%{opacity:1}50%{opacity:.3}}
+.pk-wrap{animation:pkFade .4s ease both}
+.pk-top{background:#1e40af;border-radius:18px;padding:20px 16px 22px;margin-bottom:8px}
+.pk-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.pk-logo-box{background:#fff;border-radius:10px;padding:4px 10px;display:block}
+.pk-logo-box img{height:28px;width:auto;display:block}
+.pk-clock-box{text-align:right}
+.pk-clock{font-size:20px;font-weight:700;color:#fff;font-family:monospace;letter-spacing:1px;line-height:1}
+.pk-city{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:1px;margin-top:3px}
+.pk-center{text-align:center}
+.pk-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:11px;color:rgba(255,255,255,.9);margin-bottom:12px}
+.pk-blink{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pkBlink 2s infinite;flex-shrink:0}
+.pk-hi{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.pk-sub{font-size:13px;color:rgba(255,255,255,.65);margin-bottom:10px}
+.pk-campo{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:3px;text-transform:uppercase}
+.pk-body{background:#fff;border-radius:18px;border:1px solid #e5e7eb;overflow:hidden}
+.pk-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .15s;background:#fff;width:100%;border:none;text-align:left}
+.pk-row:hover,.pk-row.open{background:#f8faff}
+.pk-ball{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.pk-info{flex:1}
+.pk-info-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:2px}
+.pk-info-sub{font-size:12px;color:#9ca3af}
+.pk-chev{font-size:16px;color:#d1d5db;transition:transform .2s;flex-shrink:0}
+.pk-row.open .pk-chev{transform:rotate(90deg)}
+.pk-divider{height:1px;background:#f3f4f6}
+.pk-cards{display:none;flex-wrap:wrap;gap:8px;padding:10px 12px 12px;background:#f9fafb}
+.pk-cards.open{display:flex}
+.pk-card{flex:1;min-width:78px;background:#fff;border:1.5px solid #e5e7eb;border-radius:14px;padding:12px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:all .15s;text-align:center}
+.pk-card:hover{border-color:#1e40af;background:#eff6ff;transform:translateY(-2px)}
+.pk-card:active{transform:translateY(0)}
+.pk-card-ico{font-size:24px;margin-bottom:2px}
+.pk-card-nm{font-size:11px;font-weight:700;color:#1f2937;line-height:1.3}
+.pk-card-lk{font-size:10px;color:#9ca3af;margin-top:2px}
+.pk-foot{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-top:1px solid #f3f4f6;background:#fff}
+.pk-foot-l{display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7280}
+.pk-foot-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pkBlink 2s infinite}
+.pk-foot-r{font-size:11px;color:#9ca3af;font-family:monospace}
 </style>
 
-<div id="profilePicker" class="pp-wrap">
-
-  <!-- Header -->
-  <div class="pp-hdr">
-    <div style="display:flex;align-items:center;gap:12px">
-      <img class="pp-logo" src="data:image/jpeg;base64,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xJNmUh9zj4jpId1VhocRkRtFhI5iorVx1KbdPlYYMKxuIo+bdWOlLbXbto0yiI6JKszHKmpUahBFvLDWisXXI0nPyMZrYb8YcVrVVFTHk1Gwq3draTYihfCNTcsOVhoiYoirgmoxr+mm6u1E0ynT0WBE6quCK+H/ABNfHbOfCm4wcohk/WDv2t/RqIyhS0rMTrmpmwXZi9r/AOjzt7dJt3MQZe1ltEej53FYSOw5ET7C6LO2UsfKtZPUuQlMHJnI/kVCdMuavU6N8D0aSiw3xWZ/VWswwZzai5q7kMmylix1fewYQuR5b0qP6amyCV+SwvQToNeOThSZmrXs0pkBjlbDcqvcicichsQgtzILGL9FqIV+caeWK/wI+gAcMkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6O3FmpC1lnZmjVGGj4MZuHL4l8RF14GTpbWh1ONFoUq6fk0dix7XI1ULtP45EcmDkRU+0u6m/l1f2932BDtnpXKEo9K+CqfAjsl8MERXIqp96nXS9xd61pqp11WZOIxYjsXxnxEXD7i8epQv2bPdQ+0RE1IiFrtecW3CCTZFGLLjLoqZd3T+qKrY9QiInVIqpguJlMA5mXLPLJym7ZIABrAAAAAABI2mjs135w400dmu/OHJHXWCCaK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400dmu/OHGmjs135w5I4TWLBXOmjs135w4JHAsUf//Z" alt="Lifting">
-      <div>
-        <div class="pp-title"><span class="pp-led"></span>CAMPO CUICHAPA — U-39</div>
-        <div class="pp-sub">SISTEMA DE CONTROL DE ACCESO</div>
+<div id="profilePicker" class="pk-wrap">
+  <div class="pk-top">
+    <div class="pk-top-row">
+      <div class="pk-logo-box"><img src="data:image/jpeg;base64,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xJNmUh9zj4jpId1VhocRkRtFhI5iorVx1KbdPlYYMKxuIo+bdWOlLbXbto0yiI6JKszHKmpUahBFvLDWisXXI0nPyMZrYb8YcVrVVFTHk1Gwq3draTYihfCNTcsOVhoiYoirgmoxr+mm6u1E0ynT0WBE6quCK+H/ABNfHbOfCm4wcohk/WDv2t/RqIyhS0rMTrmpmwXZi9r/AOjzt7dJt3MQZe1ltEej53FYSOw5ET7C6LO2UsfKtZPUuQlMHJnI/kVCdMuavU6N8D0aSiw3xWZ/VWswwZzai5q7kMmylix1fewYQuR5b0qP6amyCV+SwvQToNeOThSZmrXs0pkBjlbDcqvcicichsQgtzILGL9FqIV+caeWK/wI+gAcMkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6O3FmpC1lnZmjVGGj4MZuHL4l8RF14GTpbWh1ONFoUq6fk0dix7XI1ULtP45EcmDkRU+0u6m/l1f2932BDtnpXKEo9K+CqfAjsl8MERXIqp96nXS9xd61pqp11WZOIxYjsXxnxEXD7i8epQv2bPdQ+0RE1IiFrtecW3CCTZFGLLjLoqZd3T+qKrY9QiInVIqpguJlMA5mXLPLJym7ZIABrAAAAAABI2mjs135w400dmu/OHJHXWCCaK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400tmu/OHGmls135w5I4FiiuNNLZrvzhxppbNd+cOSOBYorjTS2a784caaWzXfnDkjgWKK400dmu/OHGmjs135w5I4TWLBXOmjs135w4JHAsUf//Z" alt="Lifting"></div>
+      <div class="pk-clock-box">
+        <div class="pk-clock" id="ppClk">--:--</div>
+        <div class="pk-city">VERACRUZ · MX</div>
       </div>
     </div>
-    <div>
-      <div class="pp-clock" id="ppClk">--:--:--</div>
-      <div class="pp-loc">VERACRUZ · MX</div>
+    <div class="pk-center">
+      <div class="pk-badge"><span class="pk-blink"></span>Sistema en línea</div>
+      <div class="pk-hi">¡Hola! 👋</div>
+      <div class="pk-sub">Toca tu nombre para entrar</div>
+      <div class="pk-campo">Campo Cuichapa · U-39</div>
     </div>
   </div>
 
-  <!-- Stats -->
-  <div class="pp-stats">
-    <div class="pp-stat">
-      <div class="pp-stat-lbl">PRODUCCIÓN HOY</div>
-      <div class="pp-stat-val">312</div>
-      <div class="pp-stat-unit">BLS / DÍA</div>
-      <div class="pp-bar"><div class="pp-bar-fill" id="ppBa"></div></div>
-    </div>
-    <div class="pp-stat">
-      <div class="pp-stat-lbl">POZOS VISITADOS HOY</div>
-      <div class="pp-stat-val" id="ppPoz">0</div>
-      <div class="pp-stat-unit">DE 42 PROGRAMADOS</div>
-      <div class="pp-bar"><div class="pp-bar-fill" id="ppBb"></div></div>
-    </div>
-  </div>
+  <div class="pk-body">
 
-  <!-- ── PRODUCCIÓN ── -->
-  <div class="pp-acc">
-    <button class="pp-acc-btn" onclick="ppToggle('prod')">
-      <div class="pp-acc-left">
-        <span class="pp-acc-icon">🛢</span>
-        <span class="pp-acc-title">Producción</span>
-        <span class="pp-acc-count">5 perfiles</span>
-      </div>
-      <span class="pp-acc-arrow" id="pp-arrow-prod">▼</span>
+    <!-- PRODUCCIÓN -->
+    <button class="pk-row" onclick="ppToggle('prod')">
+      <div class="pk-ball" style="background:#fef9c3">🛢</div>
+      <div class="pk-info"><div class="pk-info-name">Producción</div><div class="pk-info-sub">Súper, Ingenieros, Almacén</div></div>
+      <span class="pk-chev" id="pp-arrow-prod">›</span>
     </button>
-    <div class="pp-acc-body" id="pp-body-prod">
-      <div class="pp-grid">
-        <button class="pp-btn" onclick="selProfile('Superintendente','super','auth')">
-          <div class="pp-top"></div><div class="pp-dot"></div>
-          <div class="pp-ico">⭐</div>
-          <div class="pp-name">SUPER-INTENDENTE</div>
-          <div class="pp-role">Producción</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Jefe','jefe','auth')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:.4s"></div>
-          <div class="pp-ico">👷</div>
-          <div class="pp-name">JEFE ING.</div>
-          <div class="pp-role">Producción</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Ing. Ductos','ductos','auth')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:.8s"></div>
-          <div class="pp-ico">🔧</div>
-          <div class="pp-name">ING. DUCTOS</div>
-          <div class="pp-role">Producción</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Almacenista','almacenista','auth')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:1.2s"></div>
-          <div class="pp-ico">📦</div>
-          <div class="pp-name">ALMACENISTA</div>
-          <div class="pp-role">Producción</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Ing. Jorge Gill','gill','auth')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:1.6s"></div>
-          <div class="pp-ico">🏗️</div>
-          <div class="pp-name">ING. JORGE GILL</div>
-          <div class="pp-role">Producción</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-      </div>
+    <div class="pk-divider"></div>
+    <div class="pk-cards" id="pp-body-prod">
+      <div class="pk-card" onclick="selProfile('Superintendente','super','auth')"><div class="pk-card-ico">⭐</div><div class="pk-card-nm">Superin-tendente</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Jefe','jefe','auth')"><div class="pk-card-ico">👷</div><div class="pk-card-nm">Jefe Ing.</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Ing. Ductos','ductos','auth')"><div class="pk-card-ico">🔧</div><div class="pk-card-nm">Ing. Ductos</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Almacenista','almacenista','auth')"><div class="pk-card-ico">📦</div><div class="pk-card-nm">Alma-cenista</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Ing. Jorge Gill','gill','auth')"><div class="pk-card-ico">🏗️</div><div class="pk-card-nm">Ing. Gill</div><div class="pk-card-lk">🔒 clave</div></div>
     </div>
-  </div>
 
-  <!-- ── RECORREDORES ── -->
-  <div class="pp-acc">
-    <button class="pp-acc-btn" onclick="ppToggle('rec')">
-      <div class="pp-acc-left">
-        <span class="pp-acc-icon">🚶</span>
-        <span class="pp-acc-title">Recorredores</span>
-        <span class="pp-acc-count">3 perfiles</span>
-      </div>
-      <span class="pp-acc-arrow" id="pp-arrow-rec">▼</span>
+    <!-- RECORREDORES -->
+    <button class="pk-row" onclick="ppToggle('rec')">
+      <div class="pk-ball" style="background:#dcfce7">🚶</div>
+      <div class="pk-info"><div class="pk-info-name">Recorredores</div><div class="pk-info-sub">Manrique, Cirilo, Juan Carlos</div></div>
+      <span class="pk-chev" id="pp-arrow-rec">›</span>
     </button>
-    <div class="pp-acc-body" id="pp-body-rec">
-      <div class="pp-grid">
-        <button class="pp-btn" onclick="selProfile('Manrique','m','rec')">
-          <div class="pp-top"></div><div class="pp-dot"></div>
-          <div style="font-size:7px;letter-spacing:2px;color:#4a7a9a;align-self:flex-start;margin-bottom:10px;font-family:monospace">ID · MNR-001</div>
-          <div class="pp-ico">🌊</div>
-          <div class="pp-name">MANRIQUE</div>
-          <div class="pp-role">Recorredor</div>
-          <div style="width:100%;margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:7px;margin-bottom:2px"><span style="color:#4a7a9a;font-family:monospace">ZONA</span><span style="color:#5bc8a0;font-family:monospace">NORTE</span></div><div style="height:1px;background:#1a2a3a;overflow:hidden"><div style="height:100%;background:#5bc8a0;width:90%"></div></div></div>
-          <div class="pp-access">VERIFICAR ACCESO</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Cirilo','c','rec')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:.8s"></div>
-          <div style="font-size:7px;letter-spacing:2px;color:#4a7a9a;align-self:flex-start;margin-bottom:10px;font-family:monospace">ID · CRL-002</div>
-          <div class="pp-ico">🏭</div>
-          <div class="pp-name">CIRILO</div>
-          <div class="pp-role">Recorredor</div>
-          <div style="width:100%;margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:7px;margin-bottom:2px"><span style="color:#4a7a9a;font-family:monospace">ZONA</span><span style="color:#5bc8a0;font-family:monospace">SUR</span></div><div style="height:1px;background:#1a2a3a;overflow:hidden"><div style="height:100%;background:#5bc8a0;width:75%"></div></div></div>
-          <div class="pp-access">VERIFICAR ACCESO</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Juan Carlos','jc','rec')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:1.6s"></div>
-          <div style="font-size:7px;letter-spacing:2px;color:#4a7a9a;align-self:flex-start;margin-bottom:10px;font-family:monospace">ID · JCR-003</div>
-          <div class="pp-ico" style="background:#0d1828;padding:0;overflow:hidden"><svg viewBox="0 0 44 44" width="44" height="44" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="22" width="24" height="18" rx="3" fill="#1a3a5a"/><rect x="11" y="34" width="9" height="8" rx="2" fill="#1a3a5a"/><rect x="24" y="34" width="9" height="8" rx="2" fill="#1a3a5a"/><rect x="10" y="39" width="11" height="4" rx="2" fill="#0a0a0a"/><rect x="23" y="39" width="11" height="4" rx="2" fill="#0a0a0a"/><rect x="2" y="22" width="9" height="16" rx="4" fill="#1a3a5a"/><rect x="33" y="22" width="9" height="16" rx="4" fill="#1a3a5a"/><ellipse cx="6" cy="38" rx="5" ry="3.5" fill="#0f2a1a"/><ellipse cx="38" cy="38" rx="5" ry="3.5" fill="#0f2a1a"/><rect x="36" y="32" width="3" height="10" rx="1.5" fill="#888" transform="rotate(-20 38 37)"/><circle cx="37" cy="31" r="3" fill="none" stroke="#888" stroke-width="1.5"/><rect x="18" y="14" width="8" height="10" rx="3" fill="#c09060"/><ellipse cx="22" cy="12" rx="10" ry="10" fill="#c09060"/><path d="M12 11 Q22 1 32 11 Q32 6 22 4 Q12 6 12 11Z" fill="#e8e8e8"/><ellipse cx="22" cy="11" rx="12" ry="4" fill="#ddd"/><rect x="10" y="10" width="24" height="3" rx="1.5" fill="#ccc"/><rect x="15" y="13" rx="2" width="7" height="5" fill="rgba(150,200,255,.35)" stroke="#aaa" stroke-width=".6"/><rect x="23" y="13" rx="2" width="7" height="5" fill="rgba(150,200,255,.35)" stroke="#aaa" stroke-width=".6"/><line x1="22" y1="15.5" x2="23" y2="15.5" stroke="#aaa" stroke-width=".8"/><rect x="13" y="25" width="8" height="6" rx="1" fill="#0f2a40" stroke="#2a4a6a" stroke-width=".5"/><line x1="22" y1="22" x2="22" y2="40" stroke="#0f2a40" stroke-width="1" opacity=".5"/><rect x="28" y="26" width="5" height="4" rx="1" fill="#0f2a40" stroke="#2a4a6a" stroke-width=".5"/></svg></div>
-          <div class="pp-name">JUAN CARLOS</div>
-          <div class="pp-role">Recorredor</div>
-          <div style="width:100%;margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:7px;margin-bottom:2px"><span style="color:#4a7a9a;font-family:monospace">ZONA</span><span style="color:#5bc8a0;font-family:monospace">ESTE</span></div><div style="height:1px;background:#1a2a3a;overflow:hidden"><div style="height:100%;background:#5bc8a0;width:83%"></div></div></div>
-          <div class="pp-access">VERIFICAR ACCESO</div>
-        </button>
-      </div>
+    <div class="pk-divider"></div>
+    <div class="pk-cards" id="pp-body-rec">
+      <div class="pk-card" onclick="selProfile('Manrique','m','rec')"><div class="pk-card-ico">🌊</div><div class="pk-card-nm">Manrique</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Cirilo','c','rec')"><div class="pk-card-ico">⛏️</div><div class="pk-card-nm">Cirilo</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Juan Carlos','jc','rec')"><div class="pk-card-ico">🦺</div><div class="pk-card-nm">Juan Carlos</div><div class="pk-card-lk">🔒 clave</div></div>
     </div>
-  </div>
 
-  <!-- ── OPERADORES ── -->
-  <div class="pp-acc">
-    <button class="pp-acc-btn" onclick="ppToggle('op')">
-      <div class="pp-acc-left">
-        <span class="pp-acc-icon">⚙️</span>
-        <span class="pp-acc-title">Operadores</span>
-        <span class="pp-acc-count">5 perfiles</span>
-      </div>
-      <span class="pp-acc-arrow" id="pp-arrow-op">▼</span>
+    <!-- OPERADORES -->
+    <button class="pk-row" onclick="ppToggle('op')">
+      <div class="pk-ball" style="background:#dbeafe">⚙️</div>
+      <div class="pk-info"><div class="pk-info-name">Operadores</div><div class="pk-info-sub">5 operadores de campo</div></div>
+      <span class="pk-chev" id="pp-arrow-op">›</span>
     </button>
-    <div class="pp-acc-body" id="pp-body-op">
-      <div class="pp-grid">
-        <button class="pp-btn" onclick="selProfile('Operador 1','op1','rec')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:.2s"></div>
-          <div class="pp-ico">⚙️</div>
-          <div class="pp-name">OPERADOR 1</div>
-          <div class="pp-role">Operador</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Operador 2','op2','rec')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:.5s"></div>
-          <div class="pp-ico">⚙️</div>
-          <div class="pp-name">OPERADOR 2</div>
-          <div class="pp-role">Operador</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Operador 3','op3','rec')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:.8s"></div>
-          <div class="pp-ico">⚙️</div>
-          <div class="pp-name">OPERADOR 3</div>
-          <div class="pp-role">Operador</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Operador 4','op4','rec')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:1.1s"></div>
-          <div class="pp-ico">⚙️</div>
-          <div class="pp-name">OPERADOR 4</div>
-          <div class="pp-role">Operador</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Operador 5','op5','rec')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:1.4s"></div>
-          <div class="pp-ico">⚙️</div>
-          <div class="pp-name">OPERADOR 5</div>
-          <div class="pp-role">Operador</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-      </div>
+    <div class="pk-divider"></div>
+    <div class="pk-cards" id="pp-body-op">
+      <div class="pk-card" onclick="selProfile('Operador 1','op1','auth')"><div class="pk-card-ico">⚙️</div><div class="pk-card-nm">Operador 1</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Operador 2','op2','auth')"><div class="pk-card-ico">⚙️</div><div class="pk-card-nm">Operador 2</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Operador 3','op3','auth')"><div class="pk-card-ico">⚙️</div><div class="pk-card-nm">Operador 3</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Operador 4','op4','auth')"><div class="pk-card-ico">⚙️</div><div class="pk-card-nm">Operador 4</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Operador 5','op5','auth')"><div class="pk-card-ico">⚙️</div><div class="pk-card-nm">Operador 5</div><div class="pk-card-lk">🔒 clave</div></div>
     </div>
-  </div>
 
-  <!-- ── SEGURIDAD ── -->
-  <div class="pp-acc">
-    <button class="pp-acc-btn" onclick="ppToggle('seg')">
-      <div class="pp-acc-left">
-        <span class="pp-acc-icon">🛡️</span>
-        <span class="pp-acc-title">Seguridad</span>
-        <span class="pp-acc-count">3 perfiles</span>
-      </div>
-      <span class="pp-acc-arrow" id="pp-arrow-seg">▼</span>
+    <!-- SEGURIDAD -->
+    <button class="pk-row" onclick="ppToggle('seg')">
+      <div class="pk-ball" style="background:#fee2e2">🛡️</div>
+      <div class="pk-info"><div class="pk-info-name">Seguridad</div><div class="pk-info-sub">García, Ocote, Cano</div></div>
+      <span class="pk-chev" id="pp-arrow-seg">›</span>
     </button>
-    <div class="pp-acc-body" id="pp-body-seg">
-      <div class="pp-grid">
-        <button class="pp-btn" onclick="selProfile('Ing. Jorge Garcia','garcia','auth')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:.3s"></div>
-          <div class="pp-ico">🛡️</div>
-          <div class="pp-name">ING. JORGE GARCIA</div>
-          <div class="pp-role">Seguridad</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Ing. Ocote','ocote','auth')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:.7s"></div>
-          <div class="pp-ico">🛡️</div>
-          <div class="pp-name">ING. OCOTE</div>
-          <div class="pp-role">Seguridad</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
-        <button class="pp-btn" onclick="selProfile('Ing. Cano','cano','auth')">
-          <div class="pp-top"></div><div class="pp-dot" style="animation-delay:1.1s"></div>
-          <div class="pp-ico">🛡️</div>
-          <div class="pp-name">ING. CANO</div>
-          <div class="pp-role">Seguridad</div>
-          <div class="pp-access">ACCEDER</div>
-        </button>
+    <div class="pk-divider"></div>
+    <div class="pk-cards" id="pp-body-seg">
+      <div class="pk-card" onclick="selProfile('Ing. Jorge Garcia','garcia','auth')"><div class="pk-card-ico">🛡️</div><div class="pk-card-nm">Ing. García</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Ing. Ocote','ocote','auth')"><div class="pk-card-ico">🛡️</div><div class="pk-card-nm">Ing. Ocote</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Ing. Cano','cano','auth')"><div class="pk-card-ico">🛡️</div><div class="pk-card-nm">Ing. Cano</div><div class="pk-card-lk">🔒 clave</div></div>
+    </div>
+
+    <!-- INVITADO -->
+    <button class="pk-row" onclick="ppToggle('inv')">
+      <div class="pk-ball" style="background:#f3f4f6">👤</div>
+      <div class="pk-info"><div class="pk-info-name">Invitado</div><div class="pk-info-sub">Acceso temporal de consulta</div></div>
+      <span class="pk-chev" id="pp-arrow-inv">›</span>
+    </button>
+    <div class="pk-divider"></div>
+    <div class="pk-cards" id="pp-body-inv">
+      <div class="pk-card" onclick="selProfile('Invitado','invitado','guest')">
+        <div class="pk-card-ico">👤</div>
+        <div class="pk-card-nm">Invitado</div>
+        <div class="pk-card-lk" style="color:#22c55e">✓ Acceso directo</div>
       </div>
     </div>
-  </div>
 
-  <!-- Footer -->
-  <div class="pp-foot">
-    <div class="pp-status">SELECCIONA TU DIVISIÓN <span style="animation:ppCur 1s infinite;display:inline-block">_</span></div>
-    <div class="pp-pemex">PEMEX · U-39</div>
-  </div>
+    <div class="pk-foot">
+      <div class="pk-foot-l"><span class="pk-foot-dot"></span>Sistema activo</div>
+      <div class="pk-foot-r">PEMEX · U-39</div>
+    </div>
 
+  </div>
 </div><!-- /profilePicker -->
 
 <script>
 (function(){
-  function ppTick(){var d=new Date(),el=document.getElementById('ppClk');if(el)el.textContent=d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+':'+d.getSeconds().toString().padStart(2,'0');}
-  ppTick();setInterval(ppTick,1000);
-  setTimeout(function(){
-    var a=document.getElementById('ppBa'),b=document.getElementById('ppBb');
-    if(a)a.style.width='74%';if(b)b.style.width='86%';
-    var p=0,iv=setInterval(function(){p=Math.min(p+1,36);var el=document.getElementById('ppPoz');if(el)el.textContent=p;if(p>=36)clearInterval(iv);},40);
-  },500);
+  function t(){var d=new Date(),e=document.getElementById('ppClk');if(e)e.textContent=d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+  t();setInterval(t,1000);
 })();
-
 function ppToggle(id){
+  ['prod','rec','op','seg','inv'].forEach(function(s){
+    document.getElementById('pp-body-'+s).classList.remove('open');
+    document.getElementById('pp-body-'+s).previousElementSibling.classList.remove('open');
+  });
   var body=document.getElementById('pp-body-'+id);
-  var btn=document.querySelector('#pp-body-'+id).previousElementSibling;
-  var arrow=document.getElementById('pp-arrow-'+id);
-  var isOpen=body.classList.contains('open');
-  body.classList.toggle('open',!isOpen);
-  if(btn) btn.classList.toggle('open',!isOpen);
+  var row=body.previousElementSibling;
+  body.classList.add('open');
+  if(row)row.classList.add('open');
 }
 </script>
 
@@ -2655,6 +2523,20 @@ function ppToggle(id){
 
 </div><!-- /view-jefe -->
 
+<!-- REGISTRO DE ACTIVIDAD -->
+<div class="view" id="view-regactividad" style="position:relative">
+  <button onclick="volverAlPicker()" class="back-to-picker" style="position:static;margin:14px 16px 0">‹ Cambiar perfil</button>
+  <div class="hist-header">
+    <h2>📋 Registro de Actividad</h2>
+    <div style="font-size:13px;color:var(--txt2)">Exclusivo para personal de Seguridad</div>
+  </div>
+  <div style="padding:16px;text-align:center;color:var(--txt2);font-size:14px;margin-top:40px">
+    <div style="font-size:48px;margin-bottom:16px">🚧</div>
+    <div style="font-weight:700;font-size:18px;color:var(--txt);margin-bottom:8px">Sección en construcción</div>
+    <div style="font-size:13px;color:var(--txt2)">El contenido de este módulo estará disponible próximamente.</div>
+  </div>
+</div><!-- /view-regactividad -->
+
 </div><!-- /wrap -->
 
 <!-- ══ LOGIN MODAL ══ -->
@@ -3042,6 +2924,13 @@ var loginCurrentTheme = '';
 var loginCurrentNombre = '';
 
 function selProfile(nombre, theme, tipo){
+  if(theme === 'invitado'){
+    loggedIn=true; loggedUser='invitado'; loggedTheme='invitado';
+    var sb=document.querySelector('.sidebar');if(sb){sb.classList.add('sidebar-unlocked');document.body.classList.add('sidebar-visible');}
+    aplicarPermisos('invitado');
+    switchView('mapa');
+    return;
+  }
   if(tipo === 'auth'){
     loginCurrentTheme = theme;
     loginCurrentNombre = nombre;
@@ -4031,9 +3920,10 @@ var PERMISOS_MAP = {
   'ductos':      ['visitas','mapa','catalogo','historial','super','jefe'],
   'almacenista': ['visitas','mapa','catalogo','historial','super','jefe'],
   'gill':        ['visitas','mapa','catalogo','historial','super','jefe'],
-  'garcia':      ['visitas','mapa','catalogo'],
-  'ocote':       ['visitas','mapa','catalogo'],
-  'cano':        ['visitas','mapa','catalogo'],
+  'garcia':      ['visitas','mapa','catalogo','regactividad'],
+  'ocote':       ['visitas','mapa','catalogo','regactividad'],
+  'cano':        ['visitas','mapa','catalogo','regactividad'],
+  'invitado':    [],
 };
 
 // Usuarios auth (produccion, seguridad, operadores)
