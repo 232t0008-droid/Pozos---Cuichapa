@@ -1559,6 +1559,24 @@ function ppToggle(id){
     </div>
   </div>
   <textarea id="medObs" placeholder="Observaciones..." style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--surface2);color:var(--txt);resize:none;height:64px;font-family:'Inter',sans-serif"></textarea>
+
+  <!-- Foto guardia -->
+  <div style="margin-top:12px">
+    <div class="big-field-label" style="margin-bottom:8px">📸 Foto evidencia (opcional)</div>
+    <div style="display:flex;gap:8px">
+      <button type="button" onclick="document.getElementById('guardiaFotoCam').click()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer">📷 Cámara</button>
+      <button type="button" onclick="document.getElementById('guardiaFotoGal').click()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer">🖼 Galería</button>
+    </div>
+    <input type="file" id="guardiaFotoCam" accept="image/*" capture="environment" style="display:none" onchange="onGuardiaFoto(this)">
+    <input type="file" id="guardiaFotoGal" accept="image/*" style="display:none" onchange="onGuardiaFoto(this)">
+    <div id="guardiaFotoPreview" style="display:none;margin-top:8px;align-items:center;gap:10px">
+      <img id="guardiaFotoImg" style="width:72px;height:72px;border-radius:10px;object-fit:cover;border:2px solid var(--border)">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--green)" id="guardiaFotoNombre">✅ Foto lista</div>
+        <button type="button" onclick="borrarFotoGuardia()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;padding:0;margin-top:4px">✕ Quitar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ REPORTE COMPLETO ══ -->
@@ -2731,6 +2749,23 @@ function ppToggle(id){
       <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px">📍 ¿Dónde ocurrió?</div>
       <input type="text" id="alarmLocInput" placeholder="" style="width:100%;padding:14px;border-radius:10px;background:#1a1a1a;color:#fff;border:1.5px solid #444;font-size:15px;font-family:'Inter',sans-serif;outline:none">
     </div>
+    <!-- FOTO EVIDENCIA ALARMA -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px">📸 Foto del incidente (opcional)</div>
+      <div style="display:flex;gap:8px">
+        <button type="button" onclick="document.getElementById('alarmFotoCam').click()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid #333;background:#1a1a1a;color:rgba(255,255,255,.8);font-size:13px;font-weight:700;cursor:pointer">📷 Cámara</button>
+        <button type="button" onclick="document.getElementById('alarmFotoGal').click()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid #333;background:#1a1a1a;color:rgba(255,255,255,.8);font-size:13px;font-weight:700;cursor:pointer">🖼 Galería</button>
+      </div>
+      <input type="file" id="alarmFotoCam" accept="image/*" capture="environment" style="display:none" onchange="onAlarmFoto(this)">
+      <input type="file" id="alarmFotoGal" accept="image/*" style="display:none" onchange="onAlarmFoto(this)">
+      <div id="alarmFotoPreview" style="display:none;margin-top:8px;align-items:center;gap:10px">
+        <img id="alarmFotoImg" style="width:64px;height:64px;border-radius:10px;object-fit:cover;border:2px solid #dc2626">
+        <div style="flex:1">
+          <div id="alarmFotoLabel" style="font-size:12px;font-weight:700;color:#4ade80">Sin foto</div>
+          <button type="button" onclick="borrarFotoAlarma()" style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;margin-top:2px">✕ Quitar</button>
+        </div>
+      </div>
+    </div>
     <div class="alarm-actions">
       <button class="alarm-cancel-btn" onclick="cerrarAlarma()">✕ Cancelar</button>
       <button class="alarm-send-btn" id="alarmSendBtn" onclick="confirmarAlarma()" disabled>📤 Enviar alerta</button>
@@ -3535,8 +3570,11 @@ function enviarTodo(soloPreview){
       +(v('medObs')?'📝 '+v('medObs')+'\n':'')
       +gpsLinea2
       +'_C-'+W+'_';
+    var guardiaFotos=_guardiaFotoData?[{data:_guardiaFotoData,nombre:'guardia.jpg'}]:[];
+    if(_guardiaFotoData) msg2+='📸 Evidencia: 1 foto\n';
     var rep2={id:Date.now(),fecha:new Date().toISOString(),pozo:W,recorredor:REC,
-      msg:msg2,fotos:[],estado:'pendiente',ultimoIntento:null,intentos:0};
+      msg:msg2,fotos:guardiaFotos,estado:'pendiente',ultimoIntento:null,intentos:0};
+    borrarFotoGuardia();
     guardarReporte(rep2);
     agregarVisita(REC,W); mostrarContador(REC);
     var n2=getVisitas(REC).length;
@@ -4885,14 +4923,16 @@ function abrirAlarma(){
   document.getElementById('alarmLocInput').value = '';
   document.getElementById('alarmSendBtn').disabled = true;
 
-  // Forzar GPS actualizado al abrir la alarma
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(
-      function(p){ la=p.coords.latitude; lo=p.coords.longitude; ac=Math.round(p.coords.accuracy); console.log('GPS alarma:',la,lo); },
-      function(e){ console.warn('GPS alarma error:', e.message); },
-      {enableHighAccuracy:true, timeout:8000, maximumAge:0}
-    );
-  }
+  // Actualizar GPS al abrir alarma (silencioso si no disponible)
+  try{
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        function(p){ la=p.coords.latitude; lo=p.coords.longitude; ac=Math.round(p.coords.accuracy); },
+        function(e){ /* GPS no disponible en este contexto — continúa sin él */ },
+        {enableHighAccuracy:true, timeout:6000, maximumAge:30000}
+      );
+    }
+  }catch(e){}
 
   var vistaActiva = document.querySelector('.view.active');
   var esVisitas = vistaActiva && vistaActiva.id === 'view-visitas';
@@ -4916,6 +4956,7 @@ function abrirAlarma(){
 }
 
 function cerrarAlarma(){
+  borrarFotoAlarma();
   document.getElementById('alarmOverlay').classList.remove('open');
   alarmTipoSeleccionado = ''; alarmLocTipo = ''; alarmQuienSeleccionado = '';
 }
@@ -5020,8 +5061,8 @@ function _doEnviarAlarma(){
     fecha:        alarmaData.fecha,
     pozo:         lugar,
     recorredor:   quien,
-    msg:          '🚨 *ALERTA: '+alarmaData.tipo+'*\n📍 '+lugar+'\n👷 '+quien+'\n🕐 '+horaStr,
-    fotos:        [],
+    msg:          '🚨 *ALERTA: '+alarmaData.tipo+'*\n📍 '+lugar+'\n👷 '+quien+'\n🕐 '+horaStr+(_alarmFotoData?'\n📸 Evidencia: 1 foto':''),
+    fotos:        _alarmFotoData?[{data:_alarmFotoData,nombre:'alarma.jpg'}]:[],
     estado:       'pendiente',
     ultimoIntento:null,
     intentos:     0,
@@ -5163,10 +5204,7 @@ function escucharAlarmas(){
     if(navigator.vibrate) navigator.vibrate([400,100,400,100,400]);
   });
 }
-function cerrarAlarmaEntrante(){
-  var el=document.getElementById('alarmIncoming');
-  el.classList.remove('show'); el.style.display='none';
-}
+
 
 // ══ PERMISOS + INSTALACION ══════════════════════
 
@@ -5628,7 +5666,7 @@ var IMGBB_KEY = '32d6bb4e34f5b0dfcac00dac04f3e512';
 
 function comprimirFoto(base64, callback){
   try{
-    var MAX=1280, QUALITY=0.72;
+    var MAX=900, QUALITY=0.65;
     var img=new Image();
     img.onload=function(){
       var w=img.width, h=img.height;
@@ -6154,6 +6192,61 @@ function cerrarBanner(){
       +'</div>';
   }).join('');
 })();
+
+var _guardiaFotoData = null;
+var _alarmFotoData   = null;
+
+function onGuardiaFoto(inp){
+  if(!inp.files||!inp.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    _guardiaFotoData = e.target.result;
+    var prev = document.getElementById('guardiaFotoPreview');
+    var img  = document.getElementById('guardiaFotoImg');
+    var nom  = document.getElementById('guardiaFotoNombre');
+    if(img)  img.src = _guardiaFotoData;
+    if(nom)  nom.textContent = '\u2705 '+inp.files[0].name;
+    if(prev) prev.style.display = 'flex';
+  };
+  reader.readAsDataURL(inp.files[0]);
+}
+
+function borrarFotoGuardia(){
+  _guardiaFotoData = null;
+  var prev = document.getElementById('guardiaFotoPreview');
+  var inp1 = document.getElementById('guardiaFotoCam');
+  var inp2 = document.getElementById('guardiaFotoGal');
+  if(prev) prev.style.display = 'none';
+  if(inp1) inp1.value = '';
+  if(inp2) inp2.value = '';
+}
+
+function onAlarmFoto(inp){
+  if(!inp.files||!inp.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    _alarmFotoData = e.target.result;
+    var prev = document.getElementById('alarmFotoPreview');
+    var img  = document.getElementById('alarmFotoImg');
+    var lbl  = document.getElementById('alarmFotoLabel');
+    if(img)  img.src = _alarmFotoData;
+    if(lbl)  lbl.textContent = '\u2705 '+inp.files[0].name;
+    if(prev) prev.style.display = 'flex';
+  };
+  reader.readAsDataURL(inp.files[0]);
+}
+
+function borrarFotoAlarma(){
+  _alarmFotoData = null;
+  var prev = document.getElementById('alarmFotoPreview');
+  var c = document.getElementById('alarmFotoCam');
+  var g = document.getElementById('alarmFotoGal');
+  var lbl = document.getElementById('alarmFotoLabel');
+  if(prev) prev.style.display = 'none';
+  if(c) c.value = '';
+  if(g) g.value = '';
+  if(lbl) lbl.textContent = 'Sin foto';
+}
 
 function getCabObs(){
   var el=document.getElementById('cabObs');
