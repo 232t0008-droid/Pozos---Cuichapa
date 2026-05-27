@@ -950,16 +950,18 @@ body.night .chk-row.on{background:#052e1640}
 
 /* ══ CONFIRM MODAL ══ */
 .confirm-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.6);z-index:1400;
   display:none;align-items:flex-end;justify-content:center;
-  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  -webkit-tap-highlight-color:transparent;
 }
 .confirm-overlay.open{display:flex}
 .confirm-sheet{
   background:var(--surface);border-radius:20px 20px 0 0;
   padding:24px 20px 36px;width:100%;max-width:480px;
   animation:slideUp .35s cubic-bezier(.34,1.2,.64,1);
-}
+;padding-bottom:max(16px,env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .confirm-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);letter-spacing:1px;margin-bottom:4px}
 .confirm-sub{font-size:13px;color:var(--txt2);margin-bottom:16px}
@@ -3554,17 +3556,25 @@ function enviarTodo(soloPreview){
   var fueraDeRango = distMetros > 15 && distMetros > 0;
   var diaDescanso  = !ci.trabajando;
 
-  // Si está fuera de rango o día descanso → mostrar aviso personalizado antes del overlay
+  // Si está fuera de rango o día de descanso → modal HTML (no confirm() nativo)
   if(fueraDeRango || diaDescanso){
     var avisoMsg = '';
     if(fueraDeRango){
-      var distTxt = distMetros < 1000 ? Math.round(distMetros)+'m' : (distMetros/1000).toFixed(2)+'km';
-      avisoMsg += '⚠️ Estás a '+distTxt+' del pozo C-'+W+' (radio permitido: 15m).\n';
+      var distTxt2 = distMetros < 1000 ? Math.round(distMetros)+'m' : (distMetros/1000).toFixed(2)+'km';
+      avisoMsg += 'Estás a '+distTxt2+' del pozo C-'+W+'.\nRadio permitido: 15m.';
     }
-    if(diaDescanso) avisoMsg += '📅 Hoy es tu día de descanso.\n';
+    if(diaDescanso) avisoMsg += (avisoMsg?'\n':'')+'Hoy es tu día de descanso.';
     avisoMsg += '\n¿Deseas enviar el reporte de todas formas?';
-    if(!confirm(avisoMsg)) return;
+    mostrarGpsWarn(avisoMsg, function(){ _continuarEnvio(); });
+    return; // esperar respuesta del modal
   }
+  _continuarEnvio();
+}
+
+// Continuación real del envío (después de pasar el aviso GPS)
+function _continuarEnvio(){
+  if(!REC||!W||W==='???') return;
+  var ci=getCicloInfo(REC);
 
   // ── MODO GUARDIA: solo niveles ──
   if(modoRegistro === 'guardia'){
@@ -3594,12 +3604,12 @@ function enviarTodo(soloPreview){
       +gpsLinea2
       +'_C-'+W+'_';
     if(fotos.length) msg2+='📸 Evidencia: '+fotos.length+' foto'+(fotos.length===1?'':'s')+'\n';
-    // Mostrar preview igual que reporte diario
+    // Mostrar overlay de confirmación
     msgPendiente = msg2;
     var det2 = document.getElementById('confirmDetail');
     var ov2  = document.getElementById('confirmOverlay');
     if(det2) det2.textContent = msg2;
-    setTimeout(function(){ if(ov2) ov2.classList.add('open'); }, 50);
+    if(ov2) ov2.classList.add('open');
     return;
   }
 
@@ -3658,18 +3668,21 @@ function enviarTodo(soloPreview){
   if(fotos.length) msg+='📸 Evidencia: '+fotos.length+' foto'+(fotos.length===1?'':'s')+'\n';
   // QR line removed
 
-  // Guardar mensaje y mostrar modal de confirmación
+  // Guardar mensaje y mostrar overlay de confirmación
   msgPendiente = msg;
   var det = document.getElementById('confirmDetail');
   var ov  = document.getElementById('confirmOverlay');
   if(det) det.textContent = msg;
-  // setTimeout garantiza que el overlay se muestre después de cualquier confirm() nativo
-  setTimeout(function(){ if(ov) ov.classList.add('open'); }, 50);
+  if(ov) ov.classList.add('open');
 }
 
 function cerrarConfirmacion(){
-  document.getElementById('confirmOverlay').classList.remove('open');
+  var ov = document.getElementById('confirmOverlay');
+  if(ov) ov.classList.remove('open');
   msgPendiente = '';
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
 }
 
 function confirmarEnvio(){
@@ -6564,6 +6577,60 @@ function pwaVerificarInstalacion(){
     title.textContent='App no instalada';
     msg.textContent='Instala la app para acceso directo desde tu pantalla de inicio y funcionamiento sin señal. En Chrome: menú (⋮) → "Añadir a pantalla de inicio".';
     if(btn) btn.style.display='block';
+  }
+}
+</script>
+<!-- ══ GPS WARNING MODAL ══ -->
+<div id="gpsWarnModal" style="display:none;position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,.6);align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:500px">
+    <div style="font-size:28px;text-align:center;margin-bottom:10px" id="gpsWarnIco">⚠️</div>
+    <div style="font-size:16px;font-weight:700;color:#1e2761;text-align:center;margin-bottom:8px" id="gpsWarnTitle">Fuera de rango</div>
+    <div style="font-size:14px;color:#6b7280;text-align:center;margin-bottom:24px;line-height:1.5" id="gpsWarnMsg"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="gpsWarnCancelar()" style="flex:1;padding:14px;border-radius:12px;border:1.5px solid #e5e7eb;background:#fff;color:#374151;font-size:15px;font-weight:600;cursor:pointer">✕ Cancelar</button>
+      <button onclick="gpsWarnContinuar()" style="flex:1;padding:14px;border-radius:12px;border:none;background:#1e5caa;color:#fff;font-size:15px;font-weight:700;cursor:pointer">Enviar de todas formas</button>
+    </div>
+  </div>
+</div>
+<script>
+var _gpsWarnCallback = null;
+
+function mostrarGpsWarn(msg, callback){
+  _gpsWarnCallback = callback;
+  var modal = document.getElementById('gpsWarnModal');
+  var msgEl = document.getElementById('gpsWarnMsg');
+  if(msgEl) msgEl.textContent = msg;
+  if(modal){
+    modal.style.display = 'flex';
+    // iOS: prevent background scroll
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+  }
+}
+
+function gpsWarnCancelar(){
+  var modal = document.getElementById('gpsWarnModal');
+  if(modal) modal.style.display = 'none';
+  // Restore scroll
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
+  _gpsWarnCallback = null;
+}
+
+function gpsWarnContinuar(){
+  var modal = document.getElementById('gpsWarnModal');
+  if(modal) modal.style.display = 'none';
+  // Restore scroll
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
+  if(_gpsWarnCallback){
+    var cb = _gpsWarnCallback;
+    _gpsWarnCallback = null;
+    // Small delay for iOS to finish transition before opening next modal
+    setTimeout(cb, 80);
   }
 }
 </script>
