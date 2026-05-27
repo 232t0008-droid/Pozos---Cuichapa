@@ -6602,30 +6602,21 @@ function mostrarGpsWarn(msg, callback){
   if(msgEl) msgEl.textContent = msg;
   if(modal){
     modal.style.display = 'flex';
-    // iOS: prevent background scroll
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
+
   }
 }
 
 function gpsWarnCancelar(){
   var modal = document.getElementById('gpsWarnModal');
   if(modal) modal.style.display = 'none';
-  // Restore scroll
-  document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.width = '';
+
   _gpsWarnCallback = null;
 }
 
 function gpsWarnContinuar(){
   var modal = document.getElementById('gpsWarnModal');
   if(modal) modal.style.display = 'none';
-  // Restore scroll
-  document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.width = '';
+
   if(_gpsWarnCallback){
     var cb = _gpsWarnCallback;
     _gpsWarnCallback = null;
