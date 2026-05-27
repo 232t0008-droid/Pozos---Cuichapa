@@ -3538,25 +3538,33 @@ function enviarTodo(soloPreview){
   if(!W || W==='???'){alert('Selecciona el pozo antes de enviar');return}
 
   // ── Verificación de radio 15m ─────────────────────
+  var distMetros = 0;
   if(la && lo && WELL_COORDS_ALL[W]){
     var wc = WELL_COORDS_ALL[W];
-    var R = 6371000; // radio tierra en metros
+    var R = 6371000;
     var dLat = (wc.lat - la) * Math.PI / 180;
     var dLon = (wc.lon - lo) * Math.PI / 180;
     var a2 = Math.sin(dLat/2)*Math.sin(dLat/2) +
              Math.cos(la*Math.PI/180)*Math.cos(wc.lat*Math.PI/180)*
              Math.sin(dLon/2)*Math.sin(dLon/2);
-    var distMetros = R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1-a2));
-    if(distMetros > 100){
-      var distTxt = distMetros < 1000 ? Math.round(distMetros)+'m' : (distMetros/1000).toFixed(2)+'km';
-      var msg100 = "Estas a " + distTxt + " del pozo C-" + W + ". El radio permitido es de 15m. Deseas enviar de todas formas?";
-      if(!confirm(msg100)) return;
-    }
+    distMetros = R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1-a2));
   }
-  // ──────────────────────────────────────────────────
 
   var ci=getCicloInfo(REC);
-  if(!ci.trabajando&&!confirm('Estás en día de descanso. ¿Registrar de todas formas?'))return;
+  var fueraDeRango = distMetros > 15 && distMetros > 0;
+  var diaDescanso  = !ci.trabajando;
+
+  // Si está fuera de rango o día descanso → mostrar aviso personalizado antes del overlay
+  if(fueraDeRango || diaDescanso){
+    var avisoMsg = '';
+    if(fueraDeRango){
+      var distTxt = distMetros < 1000 ? Math.round(distMetros)+'m' : (distMetros/1000).toFixed(2)+'km';
+      avisoMsg += '⚠️ Estás a '+distTxt+' del pozo C-'+W+' (radio permitido: 15m).\n';
+    }
+    if(diaDescanso) avisoMsg += '📅 Hoy es tu día de descanso.\n';
+    avisoMsg += '\n¿Deseas enviar el reporte de todas formas?';
+    if(!confirm(avisoMsg)) return;
+  }
 
   // ── MODO GUARDIA: solo niveles ──
   if(modoRegistro === 'guardia'){
@@ -3588,8 +3596,10 @@ function enviarTodo(soloPreview){
     if(fotos.length) msg2+='📸 Evidencia: '+fotos.length+' foto'+(fotos.length===1?'':'s')+'\n';
     // Mostrar preview igual que reporte diario
     msgPendiente = msg2;
-    document.getElementById('confirmDetail').textContent = msg2;
-    document.getElementById('confirmOverlay').classList.add('open');
+    var det2 = document.getElementById('confirmDetail');
+    var ov2  = document.getElementById('confirmOverlay');
+    if(det2) det2.textContent = msg2;
+    setTimeout(function(){ if(ov2) ov2.classList.add('open'); }, 50);
     return;
   }
 
@@ -3650,8 +3660,11 @@ function enviarTodo(soloPreview){
 
   // Guardar mensaje y mostrar modal de confirmación
   msgPendiente = msg;
-  document.getElementById('confirmDetail').textContent = msg;
-  document.getElementById('confirmOverlay').classList.add('open');
+  var det = document.getElementById('confirmDetail');
+  var ov  = document.getElementById('confirmOverlay');
+  if(det) det.textContent = msg;
+  // setTimeout garantiza que el overlay se muestre después de cualquier confirm() nativo
+  setTimeout(function(){ if(ov) ov.classList.add('open'); }, 50);
 }
 
 function cerrarConfirmacion(){
@@ -3740,6 +3753,8 @@ function cerrarResultado(){
   msgPendiente = '';
   resetFormulario();
 }
+
+function limpiarTodo(){ resetFormulario(); }
 
 function resetFormulario(){
   // Limpiar pozo
@@ -4987,16 +5002,26 @@ function abrirAlarma(){
 }
 
 function cerrarAlarma(){
-  // Limpiar foto del incidente (mismos inputs que reporte)
-  fotos = [];
-  var fg=document.getElementById('fotoGrid');if(fg) fg.innerHTML='';
-  var fc=document.getElementById('fotoCount');if(fc) fc.textContent='';
-  var ac=document.getElementById('alarmFotoCount');if(ac) ac.textContent='';
-  var fi1=document.getElementById('fotoInputCam'),fi2=document.getElementById('fotoInputGal');
-  if(fi1) fi1.value=''; if(fi2) fi2.value='';
+  // Cerrar modal
   var ov=document.getElementById('alarmOverlay');
   if(ov) ov.classList.remove('open');
+  // Reset selections
   alarmTipoSeleccionado=''; alarmLocTipo=''; alarmQuienSeleccionado='';
+  // Reset UI selection states
+  document.querySelectorAll('.alarm-opt.selected,.alarm-quien-btn.sel').forEach(function(b){
+    b.classList.remove('selected','sel');
+  });
+  // Limpiar display de foto del incidente (pero fotos[] se limpia DESPUÉS de enviar)
+  var ac=document.getElementById('alarmFotoCount');if(ac) ac.textContent='';
+}
+
+function limpiarFotosPostAlarma(){
+  fotos = [];
+  try{ renderFotos(); }catch(e){}
+  var fg=document.getElementById('fotoGrid');if(fg) fg.innerHTML='';
+  var fc=document.getElementById('fotoCount');if(fc) fc.textContent='';
+  var fi1=document.getElementById('fotoInputCam'),fi2=document.getElementById('fotoInputGal');
+  if(fi1) fi1.value=''; if(fi2) fi2.value='';
 }
 
 function selAlarmQuien(btn, nombre){
@@ -5141,18 +5166,26 @@ function _doEnviarAlarma(){
     }).catch(function(){});
   }
 
+  // Capturar tipo ANTES de cerrar (cerrarAlarma limpia variables)
+  var tipoCapturado = alarmTipoSeleccionado;
+
+  // Cerrar modal y limpiar PRIMERO
+  cerrarAlarma();
+
+  // Luego enviar (tipo ya está capturado en tipoCapturado)
+  showToast('🚨 ALARMA ENVIADA: '+tipoCapturado);
+  tocarSonidoAlarma();
+  if(navigator.vibrate) navigator.vibrate([400,100,400,100,600,100,400]);
+
   if(navigator.onLine){
     enviarConUltramsg(alarmaData.id, function(ok){
       if(!ok) showToast('⚠️ Sin señal · Alarma guardada · Se enviará cuando haya señal');
+      limpiarFotosPostAlarma();
     });
   } else {
     showToast('⚠️ Sin señal · Alarma guardada · Se enviará cuando haya señal');
+    limpiarFotosPostAlarma();
   }
-
-  showToast('🚨 ALARMA ENVIADA: '+alarmTipoSeleccionado);
-  tocarSonidoAlarma();
-  if(navigator.vibrate) navigator.vibrate([400,100,400,100,600,100,400]);
-  cerrarAlarma();
 
   // Reintentar cuando vuelva señal
   window.addEventListener('online', function retryAlarm(){
