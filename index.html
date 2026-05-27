@@ -1160,6 +1160,18 @@ body.night .chk-row.on{background:#052e1640}
   <div class="pk-body">
 
     <!-- PRODUCCIÓN -->
+    <!-- Ing. Calderon — acceso individual arriba de todo -->
+    <button class="pk-row" onclick="ppToggle('calderon')">
+      <div class="pk-ball" style="background:linear-gradient(135deg,#1e3a5f,#1e5caa)">
+        <span style="font-size:18px;color:#f0c040">👔</span>
+      </div>
+      <div class="pk-info"><div class="pk-info-name" style="color:#1e3a5f">Ing. Calderón</div><div class="pk-info-sub">Acceso directivo</div></div>
+      <span class="pk-chev" id="pp-arrow-calderon">›</span>
+    </button>
+    <div class="pk-divider"></div>
+    <div class="pk-cards" id="pp-body-calderon">
+      <div class="pk-card" onclick="selProfile('Ing. Calderon','calderon','auth')"><div class="pk-card-ico">👔</div><div class="pk-card-nm">Ing. Calderón</div><div class="pk-card-lk">🔒 clave</div></div>
+    </div>
     <button class="pk-row" onclick="ppToggle('prod')">
       <div class="pk-ball" style="background:#fef9c3">🛢</div>
       <div class="pk-info"><div class="pk-info-name">Producción</div><div class="pk-info-sub">Súper, Ingenieros, Almacén</div></div>
@@ -1172,6 +1184,7 @@ body.night .chk-row.on{background:#052e1640}
       <div class="pk-card" onclick="selProfile('Ing. Ductos','ductos','auth')"><div class="pk-card-ico">🔧</div><div class="pk-card-nm">Ing. Ductos</div><div class="pk-card-lk">🔒 clave</div></div>
       <div class="pk-card" onclick="selProfile('Almacenista','almacenista','auth')"><div class="pk-card-ico">📦</div><div class="pk-card-nm">Alma-cenista</div><div class="pk-card-lk">🔒 clave</div></div>
       <div class="pk-card" onclick="selProfile('Ing. Jorge Gill','gill','auth')"><div class="pk-card-ico">🏗️</div><div class="pk-card-nm">Ing. Gill</div><div class="pk-card-lk">🔒 clave</div></div>
+      <div class="pk-card" onclick="selProfile('Ing. Eiran','eiran','auth')"><div class="pk-card-ico">📐</div><div class="pk-card-nm">Ing. Eiran</div><div class="pk-card-lk">🔒 clave</div></div>
     </div>
 
     <!-- RECORREDORES -->
@@ -1244,7 +1257,7 @@ body.night .chk-row.on{background:#052e1640}
   t();setInterval(t,1000);
 })();
 function ppToggle(id){
-  ['prod','rec','op','seg','inv'].forEach(function(s){
+  ['calderon','prod','rec','op','seg','inv'].forEach(function(s){
     document.getElementById('pp-body-'+s).classList.remove('open');
     document.getElementById('pp-body-'+s).previousElementSibling.classList.remove('open');
   });
@@ -3547,13 +3560,11 @@ function enviarTodo(soloPreview){
       +(v('medObs')?'📝 '+v('medObs')+'\n':'')
       +gpsLinea2
       +'_C-'+W+'_';
-        if(fotos.length) msg2+='📸 Evidencia: '+fotos.length+' foto'+(fotos.length===1?'':'s')+'\n';
-    guardarReporte(rep2);
-    agregarVisita(REC,W); mostrarContador(REC);
-    var n2=getVisitas(REC).length;
-    actualizarBadgeHistorial();
-    mostrarResultado(true, n2, navigator.onLine);
-    if(navigator.onLine) enviarConUltramsg(rep2.id, function(){ actualizarBadgeHistorial(); renderHistorial(); });
+    if(fotos.length) msg2+='📸 Evidencia: '+fotos.length+' foto'+(fotos.length===1?'':'s')+'\n';
+    // Mostrar preview igual que reporte diario
+    msgPendiente = msg2;
+    document.getElementById('confirmDetail').textContent = msg2;
+    document.getElementById('confirmOverlay').classList.add('open');
     return;
   }
 
@@ -3625,6 +3636,24 @@ function cerrarConfirmacion(){
 
 function confirmarEnvio(){
   document.getElementById('confirmOverlay').classList.remove('open');
+  var ahora = new Date().toISOString();
+  // Guardia mode
+  if(modoRegistro === 'guardia'){
+    var rep2 = {
+      id: Date.now(), fecha: ahora, pozo: W, recorredor: REC,
+      msg: msgPendiente,
+      fotos: fotos.map(function(f){ return {data:(f.data||f), nombre:(f.nombre||'')}; }),
+      estado: 'pendiente', ultimoIntento: null, intentos: 0
+    };
+    guardarReporte(rep2);
+    agregarVisita(REC,W); mostrarContador(REC);
+    var n2g=getVisitas(REC).length;
+    actualizarBadgeHistorial();
+    mostrarResultado(true, n2g, navigator.onLine);
+    if(navigator.onLine) enviarConUltramsg(rep2.id, function(){ actualizarBadgeHistorial(); renderHistorial(); });
+    limpiarTodo();
+    return;
+  }
   var ahora = new Date().toISOString();
   var reporte = {
     id: Date.now(),
@@ -4018,6 +4047,8 @@ var PERMISOS_MAP = {
   'ocote':       ['visitas','mapa','catalogo','regactividad'],
   'cano':        ['visitas','mapa','catalogo','regactividad'],
   'invitado':    [],
+  'eiran':       ['visitas','mapa','catalogo','historial','super','jefe','analisis'],
+  'calderon':    ['visitas','mapa','catalogo','historial','super','jefe','analisis','regactividad'],
 };
 
 // Usuarios auth (produccion, seguridad, operadores)
@@ -4035,6 +4066,8 @@ var AUTH_USERS = {
   'JorgeGarcia': {p:'Garcia2024',   theme:'garcia'},
   'IngOcote':    {p:'Ocote2024',    theme:'ocote'},
   'IngCano':     {p:'Cano2024',     theme:'cano'},
+  'IngEiran':    {p:'Eiran2024',    theme:'eiran'},
+  'IngCalderon': {p:'Calderon2024', theme:'calderon'},
 };
 
 function aplicarPermisos(theme){
@@ -4929,9 +4962,16 @@ function abrirAlarma(){
 }
 
 function cerrarAlarma(){
-  borrarFotoAlarma();
-  document.getElementById('alarmOverlay').classList.remove('open');
-  alarmTipoSeleccionado = ''; alarmLocTipo = ''; alarmQuienSeleccionado = '';
+  // Limpiar foto del incidente (mismos inputs que reporte)
+  fotos = [];
+  var fg=document.getElementById('fotoGrid');if(fg) fg.innerHTML='';
+  var fc=document.getElementById('fotoCount');if(fc) fc.textContent='';
+  var ac=document.getElementById('alarmFotoCount');if(ac) ac.textContent='';
+  var fi1=document.getElementById('fotoInputCam'),fi2=document.getElementById('fotoInputGal');
+  if(fi1) fi1.value=''; if(fi2) fi2.value='';
+  var ov=document.getElementById('alarmOverlay');
+  if(ov) ov.classList.remove('open');
+  alarmTipoSeleccionado=''; alarmLocTipo=''; alarmQuienSeleccionado='';
 }
 
 function selAlarmQuien(btn, nombre){
@@ -5087,12 +5127,15 @@ function _doEnviarAlarma(){
   showToast('🚨 ALARMA ENVIADA: '+alarmTipoSeleccionado);
   tocarSonidoAlarma();
   if(navigator.vibrate) navigator.vibrate([400,100,400,100,600,100,400]);
-  alarmTipoSeleccionado=''; alarmQuienSeleccionado='';
+  cerrarAlarma();
 
   // Reintentar cuando vuelva señal
   window.addEventListener('online', function retryAlarm(){
-    var pending = getAlarmasLocales().filter(function(a){ return a.estado==='pendiente'; });
-    if(pending.length) intentarEnviarAlarmaWA();
+    // Reintentar reportes pendientes (incluye fotos via enviarConUltramsg)
+    var todos = getReportes ? getReportes() : [];
+    todos.filter(function(r){ return r.estado==='pendiente'; }).forEach(function(r){
+      setTimeout(function(){ enviarConUltramsg(r.id, function(){ actualizarBadgeHistorial(); renderHistorial(); }); }, 500);
+    });
     window.removeEventListener('online', retryAlarm);
   });
 }
@@ -6327,6 +6370,47 @@ if ('serviceWorker' in navigator) {
 
 document.addEventListener('touchstart', function() { initAlarmAudio(); }, { once: true });
 document.addEventListener('click', function() { initAlarmAudio(); }, { once: true });
+
+// ══ MONITOR DE INACTIVIDAD (2 horas) ══════════════════
+(function(){
+  var INACT_MS = 2 * 60 * 60 * 1000; // 2 horas
+  var RECORREDORES = {
+    'm':  'Manrique Jimenez Perez',
+    'c':  'Cirilo Cancino Gomez',
+    'jc': 'Juan Carlos Flores Hernandez'
+  };
+
+  function ultimoReporte(recorredor){
+    var todos = typeof getReportes === 'function' ? getReportes() : [];
+    var suyos = todos.filter(function(r){ return r.recorredor === recorredor || r.recorredor === RECORREDORES[recorredor]; });
+    if(!suyos.length) return null;
+    suyos.sort(function(a,b){ return new Date(b.fecha)-new Date(a.fecha); });
+    return suyos[0];
+  }
+
+  function verificarInactividad(){
+    var ahora = Date.now();
+    Object.keys(RECORREDORES).forEach(function(key){
+      var nombre = RECORREDORES[key];
+      var ultimo = ultimoReporte(key) || ultimoReporte(nombre);
+      if(!ultimo) return; // nunca ha reportado — no alertar
+      var diff = ahora - new Date(ultimo.fecha).getTime();
+      if(diff >= INACT_MS){
+        var hrs = Math.floor(diff/3600000);
+        var mins = Math.floor((diff%3600000)/60000);
+        var msg = '⚠️ *INACTIVIDAD DETECTADA*\n'
+          +'👷 '+nombre+'\n'
+          +'🕐 Sin reportes hace '+hrs+'h '+mins+'m\n'
+          +'📍 Último reporte: C-'+ultimo.pozo+'\n'
+          +'📅 '+new Date(ultimo.fecha).toLocaleString('es-MX');
+        if(typeof umSendText === 'function') umSendText(msg, function(){});
+        showToast('⚠️ Inactividad: '+nombre+' ('+hrs+'h sin reportar)');
+      }
+    });
+  }
+
+  // Verificar cada 15 minutos
+  setInterval(verificarInactividad, 15 * 60 * 1000);
+})();
+
 </script>
-</body>
-</html>
