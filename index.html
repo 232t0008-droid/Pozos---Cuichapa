@@ -951,7 +951,7 @@ body.night .chk-row.on{background:#052e1640}
 /* ══ CONFIRM MODAL ══ */
 .confirm-overlay{
   position:fixed;top:0;left:0;right:0;bottom:0;
-  background:rgba(0,0,0,.6);z-index:1400;
+  background:rgba(0,0,0,.6);z-index:1600;
   display:none;align-items:flex-end;justify-content:center;
   -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
   -webkit-tap-highlight-color:transparent;
@@ -3413,7 +3413,7 @@ getCicloInfo = function(nombre){
 
 // ══ FOTOS ══
 // ══ FOTOS CON COMPRESIÓN ══
-var fotos = []; // [{data: base64, nombre, size}]
+ // [{data: base64, nombre, size}]
 var FOTOS_KEY = 'cuichapa_fotos_temp';
 
 // Restaurar fotos del turno actual si la app se recargó
@@ -3683,66 +3683,9 @@ function cerrarConfirmacion(){
   var ov = document.getElementById('confirmOverlay');
   if(ov) ov.classList.remove('open');
   msgPendiente = '';
-  document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.width = '';
 }
 
-function confirmarEnvio(){
-  document.getElementById('confirmOverlay').classList.remove('open');
-  var ahora = new Date().toISOString();
-  // Guardia mode
-  if(modoRegistro === 'guardia'){
-    var rep2 = {
-      id: Date.now(), fecha: ahora, pozo: W, recorredor: REC,
-      msg: msgPendiente,
-      fotos: fotos.map(function(f){ return {data:(f.data||f), nombre:(f.nombre||'')}; }),
-      estado: 'pendiente', ultimoIntento: null, intentos: 0
-    };
-    guardarReporte(rep2);
-    agregarVisita(REC,W); mostrarContador(REC);
-    var n2g=getVisitas(REC).length;
-    actualizarBadgeHistorial();
-    mostrarResultado(true, n2g, navigator.onLine);
-    if(navigator.onLine) enviarConUltramsg(rep2.id, function(){ actualizarBadgeHistorial(); renderHistorial(); });
-    limpiarTodo();
-    return;
-  }
-  var ahora = new Date().toISOString();
-  var reporte = {
-    id: Date.now(),
-    fecha: ahora,
-    pozo: W,
-    recorredor: REC,
-    msg: msgPendiente,
-    fotos: fotos.map(function(f){ return {data:(f.data||f), nombre:(f.nombre||'')}; }),
-    estado: 'pendiente',
-    ultimoIntento: null,
-    intentos: 0
-  };
-  // SIEMPRE guardar primero
-  guardarReporte(reporte);
-  agregarVisita(REC, W);
-  mostrarContador(REC);
-  var n = getVisitas(REC).length;
-  actualizarBadgeHistorial();
-  // Limpiar fotos del turno
-  limpiarFotos();
-  // Mostrar pantalla de éxito inmediatamente
-  mostrarResultado(true, n, navigator.onLine);
-  // Enviar silencioso con Ultramsg
-  if(navigator.onLine){
-    enviarConUltramsg(reporte.id, function(ok){
-      actualizarBadgeHistorial();
-      renderHistorial();
-    });
-  } else {
-    // Registrar background sync para que SW lo envíe cuando haya señal
-    if('serviceWorker' in navigator && navigator.serviceWorker.controller){
-      navigator.serviceWorker.controller.postMessage({ type: 'REGISTRAR_SYNC' });
-    }
-  }
-}
+
 
 function mostrarResultado(exito, n, enviado){
   var rv = document.getElementById('resultView');
@@ -5163,8 +5106,9 @@ function _doEnviarAlarma(){
   }
 
   // 4. Enviar WhatsApp (con cola offline)
+  var tipoCapturado = alarmTipoSeleccionado; // capturar ANTES de cerrarAlarma
   var msg = '🚨 *ALERTA DE EMERGENCIA*\n━━━━━━━━━━━━━━━━━━\n'
-    +'⚠️ Tipo: *'+alarmTipoSeleccionado+'*\n'
+    +'⚠️ Tipo: *'+tipoCapturado+'*\n'
     +'👷 Reportado por: '+quien+'\n'
     +(lugar ? 'Ubicacion: '+lugar+'\n' : '')
     +'📅 '+fechaStr+' · 🕐 '+horaStr+'\n'
@@ -5211,13 +5155,14 @@ function _doEnviarAlarma(){
   }
 
   // Reintentar cuando vuelva señal
-  window.addEventListener('online', function retryAlarm(){
-    // Reintentar reportes pendientes (incluye fotos via enviarConUltramsg)
-    var todos = getReportes ? getReportes() : [];
-    todos.filter(function(r){ return r.estado==='pendiente'; }).forEach(function(r){
-      setTimeout(function(){ enviarConUltramsg(r.id, function(){ actualizarBadgeHistorial(); renderHistorial(); }); }, 500);
+  window.addEventListener('online', function retryOnline(){
+    var todos = typeof getReportes === 'function' ? getReportes() : [];
+    var pendientes = todos.filter(function(r){ return r.estado==='pendiente'; });
+    pendientes.forEach(function(r, i){
+      setTimeout(function(){
+        enviarConUltramsg(r.id, function(){ actualizarBadgeHistorial(); renderHistorial(); });
+      }, i * 1500); // stagger to avoid rate limiting
     });
-    window.removeEventListener('online', retryAlarm);
   });
 }
 
