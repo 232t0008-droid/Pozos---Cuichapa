@@ -1779,19 +1779,27 @@ function ppToggle(id){
   <!-- ══ TARJETAS DE CONFIRMACIÓN ══ -->
   <div id="confirmCards" style="display:none;padding:0 16px 24px">
     <div style="font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.8px;margin-bottom:10px;margin-top:8px">ESTADO DEL ENVÍO</div>
-    <div id="ccMsgCard" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
-      <div id="ccMsgIcon" style="font-size:28px;flex-shrink:0;line-height:1">⏳</div>
-      <div>
-        <div id="ccMsgTitle" style="font-weight:800;font-size:14px;color:var(--txt);margin-bottom:3px">Mensaje WhatsApp</div>
-        <div id="ccMsgSub" style="font-size:12px;color:var(--txt2)">Enviando...</div>
+    <!-- Tarjeta mensaje -->
+    <div id="ccMsgCard" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div id="ccMsgIcon" style="font-size:28px;flex-shrink:0;line-height:1">⏳</div>
+        <div style="flex:1;min-width:0">
+          <div id="ccMsgTitle" style="font-weight:800;font-size:14px;color:var(--txt);margin-bottom:3px">Mensaje WhatsApp</div>
+          <div id="ccMsgSub" style="font-size:12px;color:var(--txt2)">Enviando...</div>
+        </div>
       </div>
+      <button id="ccMsgBtn" onclick="ccVerificar()" style="display:none;margin-top:12px;width:100%;padding:10px;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;color:var(--txt);cursor:pointer">🔄 Verificar envío</button>
     </div>
-    <div id="ccFotoCard" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px">
-      <div id="ccFotoIcon" style="font-size:28px;flex-shrink:0;line-height:1">📷</div>
-      <div>
-        <div style="font-weight:800;font-size:14px;color:var(--txt);margin-bottom:3px">Evidencia fotográfica</div>
-        <div id="ccFotoSub" style="font-size:12px;color:var(--txt2)">—</div>
+    <!-- Tarjeta fotos -->
+    <div id="ccFotoCard" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div id="ccFotoIcon" style="font-size:28px;flex-shrink:0;line-height:1">📷</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14px;color:var(--txt);margin-bottom:3px">Evidencia fotográfica</div>
+          <div id="ccFotoSub" style="font-size:12px;color:var(--txt2)">—</div>
+        </div>
       </div>
+      <button id="ccFotoBtn" onclick="ccVerificar()" style="display:none;margin-top:12px;width:100%;padding:10px;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;color:var(--txt);cursor:pointer">🔄 Verificar envío</button>
     </div>
   </div>
 
@@ -4600,6 +4608,7 @@ function confirmarEnvio(){
   mostrarContador(REC);
   var n = getVisitas(REC).length;
   actualizarBadgeHistorial();
+  _ccLastReporteId = reporte.id;
 
   // Intentar enviar automáticamente con Ultramsg (silencioso)
   if(navigator.onLine){
@@ -4641,12 +4650,48 @@ function confirmarEnvio(){
 }
 
 function _ccSet(tipo, icon, titulo, sub){
-  var iconEl  = document.getElementById('cc'+tipo.charAt(0).toUpperCase()+tipo.slice(1)+'Icon');
-  var titleEl = document.getElementById('cc'+tipo.charAt(0).toUpperCase()+tipo.slice(1)+'Title');
-  var subEl   = document.getElementById('cc'+tipo.charAt(0).toUpperCase()+tipo.slice(1)+'Sub');
+  var cap = tipo.charAt(0).toUpperCase()+tipo.slice(1);
+  var iconEl  = document.getElementById('cc'+cap+'Icon');
+  var titleEl = document.getElementById('cc'+cap+'Title');
+  var subEl   = document.getElementById('cc'+cap+'Sub');
+  var btnEl   = document.getElementById('cc'+cap+'Btn');
   if(iconEl)  iconEl.textContent  = icon;
   if(titleEl) titleEl.textContent = titulo;
   if(subEl)   subEl.textContent   = sub;
+  // Mostrar botón verificar solo cuando está pendiente/sin señal
+  if(btnEl) btnEl.style.display = (icon === '💾' || icon === '⚠️') ? 'block' : 'none';
+}
+
+var _ccLastReporteId = null;
+
+function ccVerificar(){
+  if(!_ccLastReporteId){ showToast('No hay reporte pendiente'); return; }
+  if(!navigator.onLine){ showToast('⚠️ Sin señal todavía — intenta de nuevo'); return; }
+  var r = getReporte(_ccLastReporteId);
+  if(!r){ showToast('Reporte no encontrado'); return; }
+  if(r.estado === 'enviado'){
+    var nF = (r.fotos||[]).length;
+    _ccSet('msg',  '✅', 'Mensaje WhatsApp', 'Enviado correctamente al grupo');
+    _ccSet('foto', nF > 0 ? '✅' : '📷', 'Evidencia fotográfica', nF > 0 ? nF+' foto'+(nF>1?'s':'')+' enviada'+(nF>1?'s':'')+' correctamente' : 'Sin fotos adjuntas');
+    return;
+  }
+  // Intentar reenvío
+  _ccSet('msg',  '⏳', 'Mensaje WhatsApp', 'Verificando y reenviando...');
+  _ccSet('foto', '⏳', 'Evidencia fotográfica', 'Verificando...');
+  enviarConUltramsg(_ccLastReporteId, function(ok){
+    actualizarBadgeHistorial();
+    if(ok){
+      var rFresh = getReporte(_ccLastReporteId);
+      var nF2 = rFresh ? (rFresh.fotos||[]).length : 0;
+      _ccSet('msg',  '✅', 'Mensaje WhatsApp', 'Enviado correctamente al grupo');
+      _ccSet('foto', nF2 > 0 ? '✅' : '📷', 'Evidencia fotográfica', nF2 > 0 ? nF2+' foto'+(nF2>1?'s':'')+' enviada'+(nF2>1?'s':'')+' correctamente' : 'Sin fotos adjuntas');
+      showToast('✅ Reporte enviado correctamente');
+    } else {
+      _ccSet('msg',  '⚠️', 'Mensaje WhatsApp', 'Sin respuesta — verifica tu señal');
+      _ccSet('foto', '⚠️', 'Evidencia fotográfica', 'Pendiente de reenvío');
+      showToast('⚠️ Sin conexión — intenta de nuevo cuando tengas señal');
+    }
+  });
 }
 
 // ── Renderizar historial ──────────────────────────
