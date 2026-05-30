@@ -977,7 +977,7 @@ body.night .chk-row.on{background:#052e1640}
 
 /* ══ RESULT SCREEN ══ */
 .result-view{
-  display:none;position:fixed;inset:0;z-index:700;
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:9000;
   background:var(--bg);flex-direction:column;overflow:hidden;
 }
 .result-view.open{display:flex}
@@ -2960,16 +2960,15 @@ function mostrarResultado(exito, n, enviado){
 function cerrarResultado(){
   document.getElementById('resultView').classList.remove('open');
   msgPendiente = '';
-  resetFormulario();
 }
 
-function mostrarPantallaResultado(pozo, rec, fotosSnap, online){
+function mostrarPantallaResultado(pozo, rec, fotosSnap, online, modo){
   var rv = document.getElementById('resultView');
   if(!rv) return;
   // Badge de modo
   var modoBadge = document.getElementById('rv-modo-badge');
   var modos = {co:'🛢 C.O.', guardia:'👷 Guardia', cab:'🔧 Cabezal', estacion:'🏭 Estación', nota:'📝 Nota', alarma:'🚨 Alarma'};
-  var modoLabel = modos[modoRegistro] || modos.co;
+  var modoLabel = modos[modo] || modos.co;
   if(modoBadge) modoBadge.textContent = modoLabel;
   // Badge pozo/recorredor
   var badge = document.getElementById('rv-badge');
@@ -4704,11 +4703,17 @@ function confirmarEnvio(){
       }
     });
   }
-  // Mostrar pantalla de resultado
-  var fotosSnap = fotos.map(function(f){ return f.data || f; });
+  // Capturar datos ANTES de resetear
+  var fotosCopy = fotos.map(function(f){ return f.data || f; });
+  var pozoCopy = W;
+  var recCopy = REC;
+  var online = navigator.onLine;
+  var modoCopy = typeof modoRegistro !== 'undefined' ? modoRegistro : 'co';
+  // Limpiar y resetear formulario
   limpiarFotos();
-  mostrarPantallaResultado(W, REC, fotosSnap, navigator.onLine);
   resetFormulario();
+  // Mostrar pantalla de resultado (después del reset para que no se cierre)
+  mostrarPantallaResultado(pozoCopy, recCopy, fotosCopy, online, modoCopy);
 }
 
 // ── Renderizar historial ──────────────────────────
