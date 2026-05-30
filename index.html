@@ -4819,7 +4819,28 @@ function cerrarBanner(){
   try{localStorage.setItem('pwa_dismissed','1');}catch(e){}
 }
 
-// ══ WELL PICKER — acceso directo sin QR ══
+// ══ WELL PICKER — selección de pozo ══
+function setWellFromPicker(num){
+  W = num;
+  // Update title
+  var wt = document.getElementById('wellTitle');
+  if(wt) wt.textContent = 'C-' + num;
+  // Close the picker list
+  var list = document.getElementById('wpSuggestions');
+  if(list) list.classList.remove('open');
+  var arrow = document.getElementById('wpArrow');
+  if(arrow) arrow.classList.remove('open');
+  // Mark selected item
+  document.querySelectorAll('#wpSuggestions .wp-item').forEach(function(el){
+    var active = el.textContent.trim() === 'C-'+num;
+    el.style.background = active ? 'var(--accent2)' : '';
+    el.style.color = active ? '#fff' : '';
+    el.style.fontWeight = active ? '800' : '';
+  });
+  // Update GPS button visibility
+  actualizarEnviarBtn();
+}
+
 (function initPicker(){
   if(W!=='???') return;
   var picker=document.getElementById('wellPicker');
@@ -4831,10 +4852,7 @@ function cerrarBanner(){
              '352','356','359','363','364','367','373','376','385','500',
              '502','504','505','601','602','603'];
   sugg.innerHTML=TODOS.map(function(w){
-    return '<div class="wp-item" onclick="setWellFromPicker(\''+w+'\')">'
-      +'<span class="wp-item-icon">🛢</span>'
-      +'<span class="wp-item-num">C-'+w+'</span>'
-      +'</div>';
+    return '<div class="wp-item" onclick="setWellFromPicker(\'' + w + '\')">'      + '<span class="wp-item-icon">🛢</span>'      + '<span class="wp-item-num">C-' + w + '</span>'      + '</div>';
   }).join('');
 })();
 
@@ -5788,15 +5806,11 @@ function _doAbrirConfirmOverlay(msg){
 }
 
 
-// Enable send btn when well selected (for co/guardia)
-var _origSWP = typeof setWellFromPicker==='function' ? setWellFromPicker : null;
-function setWellFromPicker(num){
-  if(_origSWP) _origSWP(num);
-  actualizarEnviarBtn();
-}
+
 
 // Initialize
 actualizarEnviarBtn();
+
 
 
 
@@ -6182,4 +6196,7 @@ function _ubiCategorizeAfterInit(){
 function ubiFiltrar(){ /* replaced by filter buttons */ }
 
 
-</script>
+</script>    <div style="font-size:12px;color:#8b949e;margin-bottom:18px">Selecciona el recorredor</div>
+    <div id="qrPickerList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
