@@ -978,14 +978,32 @@ body.night .chk-row.on{background:#052e1640}
 /* ══ RESULT SCREEN ══ */
 .result-view{
   display:none;position:fixed;inset:0;z-index:700;
-  background:var(--bg);align-items:center;justify-content:center;
-  flex-direction:column;padding:24px;text-align:center;
+  background:var(--bg);flex-direction:column;overflow-y:auto;
 }
 .result-view.open{display:flex}
-.result-icon{font-size:80px;margin-bottom:16px;animation:popIn .5s cubic-bezier(.34,1.56,.64,1)}
-.result-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;margin-bottom:8px}
-.result-sub{font-size:14px;color:var(--txt2);max-width:300px;line-height:1.6;margin-bottom:28px}
-.result-back{padding:14px 32px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif}
+.result-header{
+  background:linear-gradient(135deg,#0f3460 0%,#1a4d8a 100%);
+  padding:48px 24px 32px;text-align:center;flex-shrink:0;
+}
+.result-icon{font-size:72px;margin-bottom:12px;animation:popIn .5s cubic-bezier(.34,1.56,.64,1);display:block}
+.result-title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:2px;color:#fff;margin-bottom:6px}
+.result-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;letter-spacing:.5px}
+.result-body{padding:20px 16px;flex:1;max-width:480px;margin:0 auto;width:100%}
+.result-info-card{background:var(--surface);border-radius:14px;border:1.5px solid var(--border);padding:16px;margin-bottom:14px}
+.result-info-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.result-info-row:last-child{border-bottom:none;padding-bottom:0}
+.result-info-label{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.7px;min-width:80px}
+.result-info-val{font-size:14px;font-weight:700;color:var(--txt);flex:1}
+.result-fotos-title{font-size:12px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+.result-fotos-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.result-foto{width:90px;height:90px;object-fit:cover;border-radius:10px;border:2px solid var(--border)}
+.result-no-foto{font-size:12px;color:var(--txt2);font-style:italic;margin-bottom:14px}
+.result-back{width:100%;padding:16px;background:var(--green);color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px;transition:all .2s}
+.result-back:active{transform:scale(.98)}
+.result-signal{display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:14px;border:1.5px solid var(--border)}
+.result-signal-icon{font-size:22px;flex-shrink:0}
+.result-signal-txt{font-size:12px;color:var(--txt2);line-height:1.5}
+.result-signal-txt strong{color:var(--txt);font-weight:700;display:block;margin-bottom:2px}
 
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -2009,10 +2027,24 @@ function ppToggle(id){
 
 <!-- ══ PANTALLA DE RESULTADO ══ -->
 <div class="result-view" id="resultView">
-  <div class="result-icon" id="resultIcon"></div>
-  <div class="result-title" id="resultTitle"></div>
-  <div class="result-sub" id="resultSub"></div>
-  <button class="result-back" onclick="cerrarResultado()">Volver al registro</button>
+  <div class="result-header">
+    <span class="result-icon" id="resultIcon"></span>
+    <div class="result-title" id="resultTitle"></div>
+    <div id="resultBadge" class="result-badge"></div>
+  </div>
+  <div class="result-body">
+    <div class="result-signal" id="resultSignal" style="display:none">
+      <span class="result-signal-icon" id="resultSignalIcon"></span>
+      <div class="result-signal-txt" id="resultSignalTxt"></div>
+    </div>
+    <div class="result-info-card" id="resultInfoCard"></div>
+    <div id="resultFotosWrap">
+      <div class="result-fotos-title" id="resultFotosTitleEl" style="display:none">📸 Evidencia fotográfica</div>
+      <div class="result-fotos-grid" id="resultFotosGrid"></div>
+      <div class="result-no-foto" id="resultNoFoto" style="display:none">Sin fotos adjuntas</div>
+    </div>
+    <button class="result-back" onclick="cerrarResultado()">✔ Entendido · Nuevo registro</button>
+  </div>
 </div>
 
 <script>
@@ -2928,9 +2960,12 @@ function mostrarResultado(exito, n, enviado){
 }
 
 function cerrarResultado(){
-  document.getElementById('resultView').classList.remove('open');
+  var rv = document.getElementById('resultView');
+  rv.classList.remove('open');
+  // Limpiar fotos del grid para no acumular
+  var grid = document.getElementById('resultFotosGrid');
+  if(grid) grid.innerHTML = '';
   msgPendiente = '';
-  resetFormulario();
 }
 
 function limpiarTodo(){ resetFormulario(); }
@@ -4571,39 +4606,139 @@ setTimeout(function(){
 }, 3000);
 
 function confirmarEnvio(){
-  document.getElementById('confirmOverlay').classList.remove('open');
-  var ahora = new Date().toISOString();
+  var ov = document.getElementById('confirmOverlay');
+  ov.classList.remove('open');
+  ov.style.cssText = '';
+  ov.style.display = 'none';
+
+  var ahora = new Date();
+  var fechaStr = ahora.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+  var horaStr  = ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  var snapFotos = fotos.map(function(f){ return {data:(f.data||f), nombre:(f.nombre||'')}; });
+  var snapPozo  = W;
+  var snapRec   = REC;
+
   var reporte = {
     id: Date.now(),
-    fecha: ahora,
-    pozo: W,
-    recorredor: REC,
+    fecha: ahora.toISOString(),
+    pozo: snapPozo,
+    recorredor: snapRec,
     msg: msgPendiente,
-    fotos: fotos.map(function(f){ return {data:(f.data||f), nombre:(f.nombre||'')}; }),
+    fotos: snapFotos,
     estado: 'pendiente',
     ultimoIntento: null,
     intentos: 0
   };
-  // 1. SIEMPRE guardar primero — nunca perder
+
+  // 1. SIEMPRE guardar primero
   guardarReporte(reporte);
-  agregarVisita(REC, W);
-  mostrarContador(REC);
-  var n = getVisitas(REC).length;
+  agregarVisita(snapRec, snapPozo);
+  mostrarContador(snapRec);
+  var n = getVisitas(snapRec).length;
   actualizarBadgeHistorial();
 
-  // Intentar enviar automáticamente con Ultramsg (silencioso)
-  if(navigator.onLine){
+  // 2. Intentar enviar
+  var hayInternet = navigator.onLine;
+  if(hayInternet){
     enviarConUltramsg(reporte.id, function(ok){
       actualizarBadgeHistorial();
-      if(!ok){
-        showToast('⚠️ Sin respuesta · Reintentando automáticamente');
+      // Actualizar ícono de señal en pantalla de resultado
+      var si = document.getElementById('resultSignalIcon');
+      var st = document.getElementById('resultSignalTxt');
+      if(si && st){
+        if(ok){
+          si.textContent = '✅';
+          st.innerHTML = '<strong>Enviado al grupo</strong>Mensaje y fotos entregados correctamente a WhatsApp.';
+        } else {
+          si.textContent = '⏳';
+          st.innerHTML = '<strong>En cola de envío</strong>Sin respuesta del servidor · Se reintentará automáticamente cuando haya señal.';
+        }
       }
     });
   }
-  // Mostrar éxito y reiniciar formulario automáticamente
-  showToast('✅ Reporte enviado — C-'+W);
+
+  // 3. Mostrar pantalla de resultado con fotos
+  mostrarPantallaResultado(snapPozo, snapRec, fechaStr, horaStr, n, hayInternet, snapFotos);
+
+  // 4. Limpiar formulario
   limpiarFotos();
   resetFormulario();
+}
+
+function mostrarPantallaResultado(pozo, rec, fechaStr, horaStr, n, hayInternet, fotosSnap){
+  var rv = document.getElementById('resultView');
+
+  // Ícono y título
+  document.getElementById('resultIcon').textContent = '✅';
+  document.getElementById('resultTitle').textContent = 'Reporte Registrado';
+  document.getElementById('resultBadge').textContent = 'C-' + pozo + ' · ' + rec;
+
+  // Señal
+  var signal = document.getElementById('resultSignal');
+  var si     = document.getElementById('resultSignalIcon');
+  var st     = document.getElementById('resultSignalTxt');
+  if(signal && si && st){
+    signal.style.display = 'flex';
+    if(hayInternet){
+      signal.style.borderColor = 'rgba(22,163,74,.3)';
+      si.textContent = '📡';
+      st.innerHTML = '<strong>Enviando al grupo...</strong>Conectado a internet · Enviando mensaje y fotos a WhatsApp.';
+    } else {
+      signal.style.borderColor = 'rgba(245,158,11,.3)';
+      si.textContent = '💾';
+      st.innerHTML = '<strong>Guardado sin internet</strong>El reporte está guardado localmente. Se enviará al grupo automáticamente cuando haya señal.';
+    }
+  }
+
+  // Info card
+  var card = document.getElementById('resultInfoCard');
+  if(card){
+    card.innerHTML =
+      '<div class="result-info-row">'
+      +'<span class="result-info-label">Pozo</span>'
+      +'<span class="result-info-val">C-' + pozo + '</span>'
+      +'</div>'
+      +'<div class="result-info-row">'
+      +'<span class="result-info-label">Recorredor</span>'
+      +'<span class="result-info-val">' + rec + '</span>'
+      +'</div>'
+      +'<div class="result-info-row">'
+      +'<span class="result-info-label">Fecha</span>'
+      +'<span class="result-info-val">' + fechaStr + ' · ' + horaStr + '</span>'
+      +'</div>'
+      +'<div class="result-info-row">'
+      +'<span class="result-info-label">Pozos ciclo</span>'
+      +'<span class="result-info-val">' + n + ' pozo' + (n===1?'':'s') + ' registrado' + (n===1?'':'s') + ' este ciclo</span>'
+      +'</div>';
+  }
+
+  // Fotos
+  var tituloFotos = document.getElementById('resultFotosTitleEl');
+  var grid        = document.getElementById('resultFotosGrid');
+  var noFoto      = document.getElementById('resultNoFoto');
+  if(grid){
+    grid.innerHTML = '';
+    if(fotosSnap && fotosSnap.length){
+      if(tituloFotos) tituloFotos.style.display = 'block';
+      if(noFoto) noFoto.style.display = 'none';
+      fotosSnap.forEach(function(f, i){
+        var src = f.data || f;
+        if(!src) return;
+        var img = document.createElement('img');
+        img.className = 'result-foto';
+        img.src = src.startsWith('data:') ? src : 'data:image/jpeg;base64,' + src;
+        img.alt = 'Foto ' + (i+1);
+        grid.appendChild(img);
+      });
+    } else {
+      if(tituloFotos) tituloFotos.style.display = 'none';
+      if(noFoto) noFoto.style.display = 'block';
+    }
+  }
+
+  // Mostrar pantalla
+  rv.classList.add('open');
+  rv.scrollTop = 0;
 }
 
 // ── Renderizar historial ──────────────────────────
