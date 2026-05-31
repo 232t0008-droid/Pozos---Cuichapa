@@ -1029,7 +1029,7 @@ body.night .chk-row.on{background:#052e1640}
   <div class="sidebar-divider"></div>
 
   <!-- Icono 1: Registro de visitas (casco) -->
-  <div class="sidebar-icon active" id="icon-visitas" data-tip="Registro de Visitas" onclick="switchView('visitas')">
+  <div class="sidebar-icon active" id="icon-visitas" data-tip="Registro de Visitas" onclick="sidebarNav('visitas')">
     <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
       <!-- Casco petrolero -->
       <path d="M4 16 Q4 8 14 6 Q24 8 24 16 Q22 13 14 12 Q6 13 4 16Z" fill="#e8e4d8" stroke="#fff" stroke-width="1.2"/>
@@ -1046,20 +1046,32 @@ body.night .chk-row.on{background:#052e1640}
   <div class="sidebar-divider"></div>
 
   <!-- Ubicación de pozos -->
-    <div class="sidebar-icon" id="icon-ubipozos" data-tip="Ubicación de Pozos" onclick="abrirUbiMapa()" style="display:flex;align-items:center;justify-content:center">
+    <div class="sidebar-icon" id="icon-ubipozos" data-tip="Ubicación de Pozos" onclick="sidebarNav('ubipozos')" style="display:flex;align-items:center;justify-content:center">
     <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" width="26" height="26">
       <path d="M14 3 Q20 3 20 10 Q20 16 14 24 Q8 16 8 10 Q8 3 14 3Z" fill="none" stroke="#4ade80" stroke-width="2"/>
       <circle cx="14" cy="10" r="3.5" fill="#4ade80"/>
     </svg>
   </div>
-  <div class="sidebar-icon" onclick="abrirAlarma()" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:12px;display:flex;align-items:center;justify-content:center" data-tip="🚨 Alarma">
+  <div class="sidebar-icon" onclick="sidebarNav('alarma')" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:12px;display:flex;align-items:center;justify-content:center" data-tip="🚨 Alarma">
     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   </div>
+
+  <div class="sidebar-divider"></div>
+
+  <!-- Historial Central -->
+  <div class="sidebar-icon sidebar-locked" id="icon-histcentral" data-tip="Historial Central" onclick="sidebarNav('histcentral')" style="display:none">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+  </div>
+
+  <!-- Superintendente -->
+  <div class="sidebar-icon sidebar-locked" id="icon-supercentral" data-tip="Superintendente" onclick="sidebarNav('supercentral')" style="display:none">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+  </div>
+
 </div>
 
 <div class="wrap">
 <div class="view active" id="view-visitas">
-
 
 <button class="change-profile-btn" id="changeProfileBtn" onclick="volverAlPicker()">‹ Cambiar perfil</button>
 
@@ -1806,12 +1818,53 @@ function ppToggle(id){
 </div><!-- /formContent -->
 </div><!-- /view-visitas -->
 
+<!-- ══ HISTORIAL CENTRAL ══ -->
+<div class="view" id="view-histcentral" style="padding-bottom:80px">
+  <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:20px 16px 16px;margin-bottom:0">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff">📋 HISTORIAL CENTRAL</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px">Todos los reportes · Se borra automáticamente cada 7 días</div>
+  </div>
+  <!-- Filtros -->
+  <div style="display:flex;gap:8px;padding:14px 14px 10px;overflow-x:auto;flex-wrap:nowrap">
+    <button onclick="hcFiltrar('todos')" id="hcf-todos" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:800;cursor:pointer">Todos</button>
+    <button onclick="hcFiltrar('co')" id="hcf-co" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--txt2);font-size:12px;font-weight:700;cursor:pointer">🛢 C.O.</button>
+    <button onclick="hcFiltrar('guardia')" id="hcf-guardia" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--txt2);font-size:12px;font-weight:700;cursor:pointer">🌙 Nivel Nocturno</button>
+    <button onclick="hcFiltrar('cabezal')" id="hcf-cabezal" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--txt2);font-size:12px;font-weight:700;cursor:pointer">🔧 Cabezal</button>
+    <button onclick="hcFiltrar('estacion')" id="hcf-estacion" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--txt2);font-size:12px;font-weight:700;cursor:pointer">🏭 Estación</button>
+    <button onclick="hcFiltrar('alarma')" id="hcf-alarma" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--txt2);font-size:12px;font-weight:700;cursor:pointer">🚨 Alarmas</button>
+  </div>
+  <div style="padding:0 14px 6px;font-size:11px;color:var(--txt2)" id="hcCount"></div>
+  <div id="hcList" style="padding:0 14px 20px"></div>
+</div>
 
+<!-- ══ SUPERINTENDENTE ══ -->
+<div class="view" id="view-supercentral" style="padding-bottom:80px">
+  <div style="background:linear-gradient(135deg,#78350f,#92400e);padding:20px 16px 16px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff">⭐ SUPERINTENDENTE</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px">Panel de control · Solo supervisión</div>
+  </div>
+
+  <!-- Sección: Producción de Barriles -->
+  <div style="padding:16px 14px 0">
+    <div style="font-size:11px;font-weight:800;color:var(--txt2);letter-spacing:.8px;margin-bottom:12px">📈 PRODUCCIÓN DIARIA (BARRILES)</div>
+    <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:16px;padding:16px;margin-bottom:6px">
+      <canvas id="blsChart" height="200"></canvas>
+    </div>
+    <div style="font-size:11px;color:var(--txt2);text-align:center;margin-bottom:16px">Datos de Nivel Frac Tank y Nivel Nocturno</div>
+
+    <!-- Sección: Alta/Baja recorredores -->
+    <div style="font-size:11px;font-weight:800;color:var(--txt2);letter-spacing:.8px;margin-bottom:12px">👷 RECORREDORES</div>
+    <div id="recList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px"></div>
+
+  </div>
+</div>
+</div>
+</div><!-- /wrap -->
 
 
 
 <!-- ══ MAPA UBICACIÓN POZOS (modal overlay) ══ -->
-<div id="ubiModal" style="display:none;position:fixed;top:0;right:0;bottom:0;left:54px;z-index:9999;background:#0d1117;flex-direction:column;font-family:sans-serif">
+<div id="ubiModal" style="display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:9999;background:#0d1117;flex-direction:column;font-family:sans-serif">
 
   <!-- HEADER -->
   <div style="background:#161b22;flex-shrink:0;border-bottom:1px solid #30363d">
@@ -1927,64 +1980,111 @@ function ppToggle(id){
 
 <!-- ══ MODAL CONFIRMACIÓN ══ -->
 <!-- ══ MODO ALARMA MODAL ══ -->
-<div class="alarm-overlay" id="alarmOverlay">
-  <div class="alarm-sheet">
-    <div class="alarm-header">
-      <div class="alarm-siren">🚨</div>
-      <div class="alarm-title">MODO ALARMA</div>
-      <div class="alarm-sub">Selecciona el tipo de emergencia</div>
+<!-- ══ VISTA ALARMA (full-screen) ══ -->
+<div id="vistaAlarma" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100%;z-index:9999;background:var(--bg);flex-direction:column;overflow:hidden">
+
+  <!-- Header rojo -->
+  <div style="background:linear-gradient(135deg,#dc2626,#7f1d1d);padding:20px 16px 18px;display:flex;align-items:center;gap:14px;flex-shrink:0">
+    <button onclick="cerrarVistaAlarma()" style="background:rgba(255,255,255,.18);border:none;border-radius:10px;width:36px;height:36px;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;line-height:1">🚨 MODO ALARMA</div>
+      <div id="alarmSubtitle" style="font-size:12px;color:rgba(255,255,255,.65);margin-top:2px">Campo Cuichapa · Emergencias</div>
+    </div>
+    <div style="font-size:28px;animation:alarmShake .3s ease-in-out infinite alternate;flex-shrink:0">🚨</div>
+  </div>
+
+  <!-- Cuerpo scrollable -->
+  <div style="flex:1;overflow-y:auto;padding:16px 16px 32px">
+
+    <!-- Tipo de emergencia -->
+    <div style="font-size:11px;font-weight:800;color:var(--txt2);letter-spacing:.8px;margin-bottom:10px">TIPO DE EMERGENCIA</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px" id="alarmaOpciones">
+      <button class="alarm-opt" onclick="selAlarm(this,'PARO DE MTC')">
+        <span class="alarm-opt-icon">🛑</span><span class="alarm-opt-txt">PARO DE MTC</span>
+      </button>
+      <button class="alarm-opt" onclick="selAlarm(this,'BAJA PRESIÓN')">
+        <span class="alarm-opt-icon">📉</span><span class="alarm-opt-txt">BAJA PRESIÓN</span>
+      </button>
+      <button class="alarm-opt" onclick="selAlarm(this,'ALTA PRESIÓN')">
+        <span class="alarm-opt-icon">📈</span><span class="alarm-opt-txt">ALTA PRESIÓN</span>
+      </button>
+      <button class="alarm-opt" onclick="selAlarm(this,'DERRAME')">
+        <span class="alarm-opt-icon">⚠️</span><span class="alarm-opt-txt">DERRAME</span>
+      </button>
+      <button class="alarm-opt" onclick="selAlarm(this,'ACCIDENTE')" style="grid-column:1/-1">
+        <span class="alarm-opt-icon">🚑</span><span class="alarm-opt-txt">ACCIDENTE</span>
+      </button>
     </div>
 
-    <!-- Identificación (solo visible en modo visitas) -->
-    <div id="alarm-quien-wrap" style="display:none;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px">👷 ¿Quién reporta?</div>
-      <div style="display:flex;gap:8px">
-        <button class="alarm-quien-btn" onclick="selAlarmQuien(this,'Manrique')">Manrique</button>
-        <button class="alarm-quien-btn" onclick="selAlarmQuien(this,'Cirilo')">Cirilo</button>
-        <button class="alarm-quien-btn" onclick="selAlarmQuien(this,'Juan Carlos')">Juan Carlos</button>
+    <!-- ¿Dónde ocurrió? — solo usuarios NO recorredores -->
+    <div id="alarm-donde-wrap" style="display:none;margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;color:var(--txt2);letter-spacing:.8px;margin-bottom:8px">📍 ¿DÓNDE OCURRIÓ?</div>
+      <input type="text" id="alarmLocInput" placeholder="Describe el lugar del incidente..."
+        style="width:100%;padding:14px;border-radius:12px;background:var(--surface2);color:var(--txt);border:1.5px solid var(--border);font-size:14px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box">
+    </div>
+
+    <!-- Indicador GPS — solo recorredores -->
+    <div id="alarm-gps-wrap" style="display:none;margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;color:var(--txt2);letter-spacing:.8px;margin-bottom:8px">📍 UBICACIÓN</div>
+      <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:20px">📡</div>
+        <div>
+          <div id="alarmGpsTxt" style="font-size:13px;font-weight:700;color:var(--txt)">Obteniendo ubicación GPS...</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:2px">Se enviará tu posición en tiempo real al grupo</div>
+        </div>
       </div>
     </div>
 
-    <div class="alarm-options">
-      <button class="alarm-opt" onclick="selAlarm(this,'PARO DE MTC')"><span class="alarm-opt-icon">🛑</span><span class="alarm-opt-txt">PARO DE MTC</span></button>
-      <button class="alarm-opt" onclick="selAlarm(this,'BAJA PRESIÓN')"><span class="alarm-opt-icon">📉</span><span class="alarm-opt-txt">BAJA PRESIÓN</span></button>
-      <button class="alarm-opt" onclick="selAlarm(this,'ALTA PRESIÓN')"><span class="alarm-opt-icon">📈</span><span class="alarm-opt-txt">ALTA PRESIÓN</span></button>
-      <button class="alarm-opt" onclick="selAlarm(this,'DERRAME')"><span class="alarm-opt-icon">⚠️</span><span class="alarm-opt-txt">DERRAME</span></button>
-    </div>
-
-    <!-- Ubicación del incidente -->
-    <div id="alarm-location-wrap" style="display:none;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px">📍 ¿Dónde ocurrió?</div>
-      <input type="text" id="alarmLocInput" placeholder="" style="width:100%;padding:14px;border-radius:10px;background:#1a1a1a;color:#fff;border:1.5px solid #444;font-size:15px;font-family:'Inter',sans-serif;outline:none">
-    </div>
-    <!-- FOTO EVIDENCIA ALARMA -->
-    <div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px">📸 Foto del incidente (opcional)</div>
-      <div style="display:flex;gap:8px;margin-bottom:6px">
-        <button type="button" onclick="document.getElementById('fotoInputCam').click()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid #333;background:#1a1a1a;color:rgba(255,255,255,.8);font-size:13px;font-weight:700;cursor:pointer">📷 Cámara</button>
-        <button type="button" onclick="document.getElementById('fotoInputGal').click()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid #333;background:#1a1a1a;color:rgba(255,255,255,.8);font-size:13px;font-weight:700;cursor:pointer">🖼 Galería</button>
+    <!-- Evidencia fotográfica -->
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;color:var(--txt2);letter-spacing:.8px;margin-bottom:10px">
+        📸 EVIDENCIA FOTOGRÁFICA <span style="font-weight:400">(opcional)</span>
       </div>
-      <div id="alarmFotoCount" style="font-size:12px;color:#4ade80;min-height:16px"></div>
-    <div class="alarm-actions">
-      <button class="alarm-cancel-btn" onclick="cerrarAlarma()">✕ Cancelar</button>
-      <button class="alarm-send-btn" id="alarmSendBtn" onclick="confirmarAlarma()" disabled>📤 Enviar alerta</button>
+      <input type="file" id="alarmFotoInputCam" accept="image/*" capture="environment" onchange="agregarFotosAlarma(event)" style="display:none">
+      <input type="file" id="alarmFotoInputGal" accept="image/*" multiple onchange="agregarFotosAlarma(event)" style="display:none">
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <button class="foto-btn-cam" onclick="document.getElementById('alarmFotoInputCam').click()">📷 Cámara</button>
+        <button class="foto-btn-gal" onclick="document.getElementById('alarmFotoInputGal').click()">🖼 Galería</button>
+      </div>
+      <div class="foto-count" id="alarmFotoCountNew"></div>
+      <div id="alarmFotoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:8px"></div>
     </div>
-  </div>
-</div>
 
-<!-- ══ CONFIRMACIÓN ALARMA ══ -->
-<div class="alarm-confirm-overlay" id="alarmConfirmOverlay">
-  <div class="alarm-confirm-sheet">
-    <div style="font-size:52px;margin-bottom:12px">🚨</div>
-    <div class="alarm-confirm-title">¿CONFIRMAR EMERGENCIA?</div>
-    <div class="alarm-confirm-type" id="alarmConfirmType"></div>
-    <div class="alarm-confirm-sub">Esta alerta llegará a <strong>todos los dispositivos</strong> con la app instalada.</div>
-    <div class="alarm-confirm-btns">
-      <button class="alarm-no-btn" onclick="cancelarConfirmAlarma()">✕ No, cancelar</button>
-      <button class="alarm-yes-btn" onclick="enviarAlarma()">🚨 Sí, enviar ahora</button>
+    <!-- Botón enviar -->
+    <button id="alarmSendBtn" onclick="confirmarAlarma()" disabled
+      style="width:100%;padding:18px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:900;font-family:'Inter',sans-serif;cursor:pointer;opacity:.45;pointer-events:none;letter-spacing:.5px;box-shadow:0 4px 20px rgba(220,38,38,.4)">
+      🚨 Enviar alerta
+    </button>
+
+    <!-- Tarjetas de confirmación -->
+    <div id="alarmConfirmCards" style="display:none;margin-top:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.8px;margin-bottom:10px">ESTADO DEL ENVÍO</div>
+      <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div id="alarmCcMsgIcon" style="font-size:28px;flex-shrink:0;line-height:1">⏳</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:14px;color:var(--txt);margin-bottom:3px">Mensaje WhatsApp</div>
+            <div id="alarmCcMsgSub" style="font-size:12px;color:var(--txt2)">Enviando alerta...</div>
+          </div>
+        </div>
+        <button id="alarmCcMsgBtn" onclick="alarmCcVerificar()" style="display:none;margin-top:12px;width:100%;padding:10px;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;color:var(--txt);cursor:pointer">🔄 Verificar envío</button>
+      </div>
+      <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div id="alarmCcFotoIcon" style="font-size:28px;flex-shrink:0;line-height:1">📷</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:14px;color:var(--txt);margin-bottom:3px">Evidencia fotográfica</div>
+            <div id="alarmCcFotoSub" style="font-size:12px;color:var(--txt2)">—</div>
+          </div>
+        </div>
+        <button id="alarmCcFotoBtn" onclick="alarmCcVerificar()" style="display:none;margin-top:12px;width:100%;padding:10px;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;color:var(--txt);cursor:pointer">🔄 Verificar envío</button>
+      </div>
     </div>
-  </div>
-</div>
+
+  </div><!-- /scroll body -->
+</div><!-- /vistaAlarma -->
+
+
 
 <!-- ══ ALERTA ENTRANTE (todos los dispositivos) ══ -->
 <div class="alarm-incoming" id="alarmIncoming" style="display:none">
@@ -2249,6 +2349,7 @@ window.addEventListener('load', function(){
   setTimeout(function(){
     verificarPermisos();
     mostrarPermOverlay();
+    hcAutoLimpiar(); // Auto-limpiar reportes mayores a 7 días
   }, 800);
 });
 
@@ -2336,11 +2437,11 @@ function volverAlPicker(){
   var cpb = document.getElementById('changeProfileBtn');
   if(cpb) cpb.style.display = 'none';
   // Reset sidebar icons visibility
-  ['super','jefe','catalogo','mapa','historial'].forEach(function(v){
+  ['super','jefe','catalogo','mapa','historial','histcentral','supercentral'].forEach(function(v){
     var ic = document.getElementById('icon-'+v);
     if(ic){
       ic.classList.add('sidebar-locked');
-      ic.style.display = '';
+      ic.style.display = 'none';
     }
   });
   // Hide sidebar
@@ -2701,8 +2802,7 @@ function agregarFotos(e){
       }
       if(procesadas === total){
         if(count) count.textContent = fotos.length + ' foto'+(fotos.length!==1?'s':'')+' lista'+(fotos.length!==1?'s':'');
-        var ac=document.getElementById('alarmFotoCount');
-        if(ac) ac.textContent=fotos.length?'✅ '+fotos.length+' foto'+(fotos.length!==1?'s':'')+' lista'+(fotos.length!==1?'s':''):'';
+
       }
     });
   });
@@ -3281,25 +3381,25 @@ function requireLogin(target){
 
 // Permisos por usuario (theme/rol)
 var PERMISOS_MAP = {
-  'm':           ['visitas','mapa'],
-  'c':           ['visitas','mapa'],
-  'jc':          ['visitas','mapa'],
+  'm':           ['visitas','mapa','histcentral'],
+  'c':           ['visitas','mapa','histcentral'],
+  'jc':          ['visitas','mapa','histcentral'],
   'op1':         ['mapa'],
   'op2':         ['mapa'],
   'op3':         ['mapa'],
   'op4':         ['mapa'],
   'op5':         ['mapa'],
-  'super':       ['visitas','mapa','catalogo','historial','super','jefe','analisis'],
-  'jefe':        ['visitas','mapa','catalogo','historial','super','jefe','analisis'],
-  'ductos':      ['visitas','mapa','catalogo','historial','super','jefe','analisis'],
-  'almacenista': ['visitas','mapa','catalogo','historial','super','jefe','analisis'],
-  'gill':        ['visitas','mapa','catalogo','historial','super','jefe','analisis'],
-  'garcia':      ['visitas','mapa','catalogo','regactividad'],
-  'ocote':       ['visitas','mapa','catalogo','regactividad'],
-  'cano':        ['visitas','mapa','catalogo','regactividad'],
+  'super':       ['visitas','mapa','catalogo','historial','super','jefe','analisis','histcentral','supercentral'],
+  'jefe':        ['visitas','mapa','catalogo','historial','super','jefe','analisis','histcentral','supercentral'],
+  'ductos':      ['visitas','mapa','catalogo','historial','super','jefe','analisis','histcentral'],
+  'almacenista': ['visitas','mapa','catalogo','historial','super','jefe','analisis','histcentral'],
+  'gill':        ['visitas','mapa','catalogo','historial','super','jefe','analisis','histcentral'],
+  'garcia':      ['visitas','mapa','catalogo','regactividad','histcentral'],
+  'ocote':       ['visitas','mapa','catalogo','regactividad','histcentral'],
+  'cano':        ['visitas','mapa','catalogo','regactividad','histcentral'],
   'invitado':    [],
-  'eiran':       ['visitas','mapa','catalogo','historial','super','jefe','analisis'],
-  'calderon':    ['visitas','mapa','catalogo','historial','super','jefe','analisis','regactividad'],
+  'eiran':       ['visitas','mapa','catalogo','historial','super','jefe','analisis','histcentral','supercentral'],
+  'calderon':    ['visitas','mapa','catalogo','historial','super','jefe','analisis','regactividad','histcentral','supercentral'],
 };
 
 // Usuarios auth (produccion, seguridad, operadores)
@@ -3323,7 +3423,7 @@ var AUTH_USERS = {
 
 function aplicarPermisos(theme){
   var perms = PERMISOS_MAP[theme] || [];
-  var allViews = ['super','jefe','catalogo','mapa','historial','analisis','regactividad'];
+  var allViews = ['super','jefe','catalogo','mapa','historial','analisis','regactividad','histcentral','supercentral'];
   allViews.forEach(function(v){
     var ic = document.getElementById('icon-'+v);
     if(!ic) return;
@@ -3331,8 +3431,7 @@ function aplicarPermisos(theme){
       ic.classList.remove('sidebar-locked');
       ic.style.display = '';
       ic.style.opacity = '1';
-      var vv = v;
-      ic.onclick = function(){ switchView(vv); };
+      ic.onclick = (function(vv){ return function(){ sidebarNav(vv); }; })(v);
     } else {
       ic.classList.add('sidebar-locked');
       ic.style.display = 'none';
@@ -3453,6 +3552,31 @@ function toDMS(deg, isLat){
   var dir=isLat?(deg>=0?'N':'S'):(deg>=0?'E':'W');
   return d+'° '+m+"' "+s+'" '+dir;
 }
+// ── Navegación desde sidebar — cierra cualquier overlay activo primero ──
+function sidebarNav(dest){
+  // Cerrar confirmOverlay si está abierto
+  var co = document.getElementById('confirmOverlay');
+  if(co) { co.style.cssText = ''; co.style.display = 'none'; }
+  // Cerrar vistaAlarma si está abierta
+  var va = document.getElementById('vistaAlarma');
+  if(va && va.style.display !== 'none'){ cerrarVistaAlarma(); return; }
+  // Cerrar ubiModal si está abierto
+  var um = document.getElementById('ubiModal');
+  if(um && um.style.display !== 'none'){ cerrarUbiMapa(); return; }
+  // Restaurar sidebar y overflow por si acaso
+  document.body.style.overflow = '';
+  var sidebar = document.querySelector('.sidebar');
+  if(sidebar) sidebar.style.display = '';
+
+  if(dest === 'alarma'){
+    abrirVistaAlarma();
+  } else if(dest === 'ubipozos'){
+    abrirUbiMapa();
+  } else {
+    switchView(dest);
+  }
+}
+
 function switchView(id){
   document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
   // Show change-profile button on all views except visitas picker
@@ -3509,10 +3633,14 @@ function switchView(id){
   } else if(id==='jefe'){
     var ic=document.getElementById('icon-jefe');
     if(ic) ic.classList.add('active');
-  } else if(id==='historial'){
-    var ic=document.getElementById('icon-historial');
+  } else if(id==='histcentral'){
+    var ic=document.getElementById('icon-histcentral');
     if(ic) ic.classList.add('active');
-    renderHistorial('todos');
+    renderHistCentral();
+  } else if(id==='supercentral'){
+    var ic=document.getElementById('icon-supercentral');
+    if(ic) ic.classList.add('active');
+    renderSuperCentral();
   }
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -3554,249 +3682,597 @@ function getAlarmasLocales(){ try{ return JSON.parse(localStorage.getItem(ALARM_
 function saveAlarmasLocales(arr){ try{ localStorage.setItem(ALARM_KEY, JSON.stringify(arr)); }catch(e){} }
 
 var _lastAlarmClick = 0;
-function abrirAlarma(){
+// Fotos alarma separadas del formulario diario
+var fotosAlarma = [];
+
+function abrirVistaAlarma(){
   var now = Date.now();
-  if(now - _lastAlarmClick < 1200) return; // debounce 1.2s
+  if(now - _lastAlarmClick < 1200) return;
   _lastAlarmClick = now;
-  // Reset por si acaso se filtró un toque del botón enviar
-  if(document.getElementById('gpsWarnModal') && 
-     document.getElementById('gpsWarnModal').style.display === 'flex') return;
+
+  // Reset estado
   alarmTipoSeleccionado = '';
-  alarmQuienSeleccionado = '';
-  document.querySelectorAll('.alarm-opt').forEach(function(b){ b.classList.remove('selected'); });
-  document.querySelectorAll('.alarm-quien-btn').forEach(function(b){ b.classList.remove('sel'); });
-  document.getElementById('alarm-location-wrap').style.display = 'none';
+  fotosAlarma = [];
+  document.querySelectorAll('#alarmaOpciones .alarm-opt').forEach(function(b){ b.classList.remove('selected'); });
   document.getElementById('alarmLocInput').value = '';
-  document.getElementById('alarmSendBtn').disabled = true;
+  document.getElementById('alarmFotoGrid').innerHTML = '';
+  document.getElementById('alarmFotoCountNew').textContent = '';
+  document.getElementById('alarmConfirmCards').style.display = 'none';
+  var sb = document.getElementById('alarmSendBtn');
+  if(sb){ sb.disabled = true; sb.style.opacity = '.45'; sb.style.pointerEvents = 'none'; }
 
-  // Actualizar GPS al abrir alarma (silencioso si no disponible)
-  try{
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(
-        function(p){ la=p.coords.latitude; lo=p.coords.longitude; ac=Math.round(p.coords.accuracy); },
-        function(e){ /* GPS no disponible en este contexto — continúa sin él */ },
-        {enableHighAccuracy:true, timeout:6000, maximumAge:30000}
-      );
+  // Detectar si es recorredor:
+  // REC puede ser 'Manrique', 'Cirilo', 'Juan Carlos' (nombre corto de selRec)
+  // loggedUser puede ser 'm', 'c', 'jc' (theme del login de recorredor)
+  var RECS_SHORT = ['Manrique','Cirilo','Juan Carlos'];
+  var RECS_THEMES = ['m','c','jc'];
+  var RECS_NOMBRES = {'m':'Manrique','c':'Cirilo','jc':'Juan Carlos'};
+  var esRecorredor = RECS_SHORT.indexOf(REC) !== -1 || RECS_THEMES.indexOf(loggedUser) !== -1;
+
+  // Subtítulo con usuario detectado
+  var nombreMostrar = REC || RECS_NOMBRES[loggedUser] || loggedUser || 'Campo Cuichapa';
+  var sub = document.getElementById('alarmSubtitle');
+  if(sub) sub.textContent = '👤 ' + nombreMostrar + ' · Emergencias';
+
+  // Mostrar UI según tipo de usuario
+  var donde = document.getElementById('alarm-donde-wrap');
+  var gpsWrap = document.getElementById('alarm-gps-wrap');
+  if(esRecorredor){
+    if(donde) donde.style.display = 'none';
+    if(gpsWrap) gpsWrap.style.display = 'block';
+    var gpsTxt = document.getElementById('alarmGpsTxt');
+    if(la !== 0 && lo !== 0){
+      if(gpsTxt) gpsTxt.textContent = '📍 ' + la.toFixed(5) + ', ' + lo.toFixed(5) + ' (±' + ac + 'm)';
+    } else {
+      if(gpsTxt) gpsTxt.textContent = 'Obteniendo ubicación GPS...';
     }
-  }catch(e){}
-
-  var vistaActiva = document.querySelector('.view.active');
-  var esVisitas = vistaActiva && vistaActiva.id === 'view-visitas';
-
-  // Selector de identidad solo para recorredores
-  var quienWrap = document.getElementById('alarm-quien-wrap');
-  if(quienWrap) quienWrap.style.display = esVisitas ? 'block' : 'none';
-  // Pre-seleccionar recorredor si ya está elegido
-  if(esVisitas && REC){
-    alarmQuienSeleccionado = REC;
-    document.querySelectorAll('.alarm-quien-btn').forEach(function(b){
-      if(b.textContent.trim() === REC) b.classList.add('sel');
-    });
+    try{
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(
+          function(p){
+            la=p.coords.latitude; lo=p.coords.longitude; ac=Math.round(p.coords.accuracy);
+            var t = document.getElementById('alarmGpsTxt');
+            if(t) t.textContent = '📍 ' + la.toFixed(5) + ', ' + lo.toFixed(5) + ' (±' + ac + 'm)';
+          },
+          function(){
+            var t = document.getElementById('alarmGpsTxt');
+            if(t) t.textContent = '⚠️ Sin GPS — se enviará ubicación aproximada';
+          },
+          {enableHighAccuracy:true, timeout:6000, maximumAge:30000}
+        );
+      }
+    }catch(e){}
+  } else {
+    if(donde) donde.style.display = 'block';
+    if(gpsWrap) gpsWrap.style.display = 'none';
   }
 
-  // Campo de ubicación: solo para Super/Jefe — recorredores usan GPS automático
-  var locWrap = document.getElementById('alarm-location-wrap');
-  if(locWrap) locWrap.dataset.esVisitas = esVisitas ? '1' : '0';
-
-  document.getElementById('alarmOverlay').classList.add('open');
+  // Mostrar vista cubriendo TODO — ocultar sidebar
+  var sidebar = document.querySelector('.sidebar');
+  if(sidebar) sidebar.style.display = 'none';
+  var v = document.getElementById('vistaAlarma');
+  v.style.cssText = 'display:flex;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:var(--bg);flex-direction:column;overflow:hidden';
+  document.body.style.overflow = 'hidden';
+  v.scrollTop = 0;
 }
 
-function cerrarAlarma(){
-  // Cerrar modal
-  var ov=document.getElementById('alarmOverlay');
-  if(ov) ov.classList.remove('open');
-  // Reset selections
-  alarmTipoSeleccionado=''; alarmLocTipo=''; alarmQuienSeleccionado='';
-  // Reset UI selection states
-  document.querySelectorAll('.alarm-opt.selected,.alarm-quien-btn.sel').forEach(function(b){
-    b.classList.remove('selected','sel');
+// Compatibilidad — abrirAlarma ahora llama la nueva vista
+function abrirAlarma(){ abrirVistaAlarma(); }
+
+function cerrarVistaAlarma(){
+  var v = document.getElementById('vistaAlarma');
+  v.style.display = 'none';
+  document.body.style.overflow = '';
+  var sidebar = document.querySelector('.sidebar');
+  if(sidebar) sidebar.style.display = '';
+  alarmTipoSeleccionado = '';
+  fotosAlarma = [];
+  document.querySelectorAll('#alarmaOpciones .alarm-opt').forEach(function(b){ b.classList.remove('selected'); });
+}
+
+function cerrarAlarma(){ cerrarVistaAlarma(); }
+
+function agregarFotosAlarma(event){
+  var files = event.target.files;
+  if(!files||!files.length) return;
+  var grid = document.getElementById('alarmFotoGrid');
+  var countEl = document.getElementById('alarmFotoCountNew');
+  Array.from(files).forEach(function(file){
+    if(fotosAlarma.length >= 5) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var data = e.target.result;
+      var id = Date.now()+'_'+Math.random();
+      fotosAlarma.push({data:data, nombre:file.name, id:id});
+      // Render miniatura
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;display:inline-block';
+      var img = document.createElement('img');
+      img.src = data;
+      img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:10px;border:1.5px solid var(--border)';
+      var del = document.createElement('button');
+      del.textContent = '✕';
+      del.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1';
+      del.onclick = (function(fid, wr){ return function(){
+        fotosAlarma = fotosAlarma.filter(function(f){ return f.id !== fid; });
+        wr.remove();
+        countEl.textContent = fotosAlarma.length ? fotosAlarma.length+' foto'+(fotosAlarma.length>1?'s':'')+' lista'+(fotosAlarma.length>1?'s':''): '';
+      };})(id, wrap);
+      wrap.appendChild(img); wrap.appendChild(del);
+      grid.appendChild(wrap);
+      countEl.textContent = fotosAlarma.length+' foto'+(fotosAlarma.length>1?'s':'')+' lista'+(fotosAlarma.length>1?'s':'');
+    };
+    reader.readAsDataURL(file);
   });
-  // Limpiar display de foto del incidente (pero fotos[] se limpia DESPUÉS de enviar)
-  var ac=document.getElementById('alarmFotoCount');if(ac) ac.textContent='';
-}
-
-function limpiarFotosPostAlarma(){
-  fotos = [];
-  try{ renderFotos(); }catch(e){}
-  var fg=document.getElementById('fotoGrid');if(fg) fg.innerHTML='';
-  var fc=document.getElementById('fotoCount');if(fc) fc.textContent='';
-  var fi1=document.getElementById('fotoInputCam'),fi2=document.getElementById('fotoInputGal');
-  if(fi1) fi1.value=''; if(fi2) fi2.value='';
-}
-
-function selAlarmQuien(btn, nombre){
-  document.querySelectorAll('.alarm-quien-btn').forEach(function(b){ b.classList.remove('sel'); });
-  btn.classList.add('sel');
-  alarmQuienSeleccionado = nombre;
+  event.target.value = '';
 }
 
 function selAlarm(btn, tipo){
-  document.querySelectorAll('.alarm-opt').forEach(function(b){ b.classList.remove('selected'); });
+  document.querySelectorAll('#alarmaOpciones .alarm-opt').forEach(function(b){ b.classList.remove('selected'); });
   btn.classList.add('selected');
   alarmTipoSeleccionado = tipo;
-  // Mostrar ubicación solo para Super/Jefe — recorredor usa GPS automático
-  var lw = document.getElementById('alarm-location-wrap');
-  if(lw) lw.style.display = (lw.dataset.esVisitas === '1') ? 'none' : 'block';
-  document.getElementById('alarmSendBtn').disabled = false;
+  var sb = document.getElementById('alarmSendBtn');
+  if(sb){ sb.disabled = false; sb.style.opacity = '1'; sb.style.pointerEvents = 'auto'; }
 }
 
 function confirmarAlarma(){
   if(!alarmTipoSeleccionado) return;
-  // En vista visitas: requiere identificación
-  var vistaActiva = document.querySelector('.view.active');
-  var esVisitas = vistaActiva && vistaActiva.id === 'view-visitas';
-  if(esVisitas && !alarmQuienSeleccionado){
-    alert('Selecciona quién reporta la emergencia');
-    return;
-  }
-  document.getElementById('alarmOverlay').classList.remove('open');
-  document.getElementById('alarmConfirmType').textContent = alarmTipoSeleccionado;
+  // Mostrar confirmación inline
   document.getElementById('alarmConfirmOverlay').classList.add('open');
+  document.getElementById('alarmConfirmType').textContent = alarmTipoSeleccionado;
 }
 
 function cancelarConfirmAlarma(){
   document.getElementById('alarmConfirmOverlay').classList.remove('open');
-  document.getElementById('alarmOverlay').classList.add('open');
+}
+
+var _alarmLastReporteId = null;
+
+function _alarmCcSet(tipo, icon, sub){
+  var iconEl = document.getElementById('alarmCc'+tipo+'Icon');
+  var subEl  = document.getElementById('alarmCc'+tipo+'Sub');
+  var btnEl  = document.getElementById('alarmCc'+tipo+'Btn');
+  if(iconEl) iconEl.textContent = icon;
+  if(subEl)  subEl.textContent  = sub;
+  if(btnEl)  btnEl.style.display = (icon==='💾'||icon==='⚠️') ? 'block' : 'none';
+}
+
+function alarmCcVerificar(){
+  if(!_alarmLastReporteId){ showToast('No hay alarma pendiente'); return; }
+  if(!navigator.onLine){ showToast('⚠️ Sin señal todavía'); return; }
+  _alarmCcSet('Msg','⏳','Verificando y reenviando...');
+  _alarmCcSet('Foto','⏳','Verificando...');
+  enviarConUltramsg(_alarmLastReporteId, function(ok){
+    actualizarBadgeHistorial();
+    if(ok){
+      var r = getReporte(_alarmLastReporteId);
+      var nF = r ? (r.fotos||[]).length : 0;
+      _alarmCcSet('Msg','✅','Enviado correctamente al grupo');
+      _alarmCcSet('Foto', nF>0?'✅':'📷', nF>0?nF+' foto'+(nF>1?'s':'')+' enviada'+(nF>1?'s':''):' Sin fotos adjuntas');
+      showToast('✅ Alarma enviada correctamente');
+    } else {
+      _alarmCcSet('Msg','⚠️','Sin respuesta — verifica tu señal');
+      _alarmCcSet('Foto','⚠️','Pendiente de reenvío');
+      showToast('⚠️ Sin conexión — intenta de nuevo');
+    }
+  });
 }
 
 function enviarAlarma(){
   document.getElementById('alarmConfirmOverlay').classList.remove('open');
-  // Si no tenemos GPS aún, intentar obtenerlo con timeout de 5 segundos
-  if((la === 0 && lo === 0) && navigator.geolocation){
-    showToast('📍 Obteniendo ubicación...');
-    var gpsTimeout = setTimeout(function(){ _doEnviarAlarma(); }, 5000);
-    navigator.geolocation.getCurrentPosition(
-      function(p){
-        clearTimeout(gpsTimeout);
-        la=p.coords.latitude; lo=p.coords.longitude; ac=Math.round(p.coords.accuracy);
-        _doEnviarAlarma();
-      },
-      function(){ clearTimeout(gpsTimeout); _doEnviarAlarma(); },
-      {enableHighAccuracy:true, timeout:5000, maximumAge:0}
-    );
-  } else {
-    _doEnviarAlarma();
-  }
-}
 
-function _doEnviarAlarma(){
+  // Detectar quien reporta automáticamente
+  var RECS = {'m':'Manrique','c':'Cirilo','jc':'Juan Carlos'};
+  var RECS_SHORT = ['Manrique','Cirilo','Juan Carlos'];
+  var quien = REC || RECS[loggedUser] || loggedUser || 'Campo Cuichapa';
+  var esRecorredor = RECS_SHORT.indexOf(REC) !== -1 || ['m','c','jc'].indexOf(loggedUser) !== -1;
+
   var ahora = new Date();
   var horaStr  = ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
   var fechaStr = ahora.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
-  var quien = alarmQuienSeleccionado || REC || loggedUser || 'Campo';
-  // Detectar si es recorredor (tienen REC definido) o Super/Jefe (loggedUser)
-  var esRecorredor = !!(alarmQuienSeleccionado || REC);
-  var lugar;
-  if(esRecorredor){
-    // Recorredor: manda ubicación GPS en tiempo real
-    if(la !== 0 && lo !== 0){
-      lugar = la.toFixed(6)+','+lo.toFixed(6)
-        +'\nhttps://maps.google.com/?q='+la+','+lo;
-    } else if(W && W!=='???'){
-      lugar = 'Pozo C-'+W+' (sin GPS)';
-    } else {
-      lugar = 'Campo Cuichapa (sin GPS)';
-    }
-  } else {
-    // Super/Jefe: NO manda ubicación
-    lugar = '';
-  }
-
-  var alarmaData = {
-    id:       ahora.getTime(),
-    tipo:     alarmTipoSeleccionado,
-    quien:    quien,
-    lugar:    lugar,
-    fecha:    ahora.toISOString(),
-    hora:     horaStr,
-    estado:   'pendiente',
-    esAlarma: true   // marca especial para filtro M.A.
-  };
-
-  // 1. SIEMPRE guardar en historial local primero
-  var arr = getAlarmasLocales();
-  arr.unshift(alarmaData);
-  saveAlarmasLocales(arr);
-
-  // 2. Guardar también en historial principal (para pestaña M.A.)
-  guardarReporte({
-    id:           alarmaData.id,
-    fecha:        alarmaData.fecha,
-    pozo:         lugar,
-    recorredor:   quien,
-    msg:          '🚨 *ALERTA: '+alarmaData.tipo+'*\n📍 '+lugar+'\n👷 '+quien+'\n🕐 '+horaStr+(fotos.length?'\n📸 Evidencia: '+fotos.length+' foto'+(fotos.length===1?'':'s'):''),
-    fotos:        fotos.slice(),
-    estado:       'pendiente',
-    ultimoIntento:null,
-    intentos:     0,
-    esAlarma:     true,
-    tipoAlarma:   alarmaData.tipo
-  });
-
-  // 3. Firebase → todos los dispositivos abiertos
-  if(fbDB){
-    fbDB.ref('alarmas/'+alarmaData.id).set(alarmaData).catch(function(){});
-    enviarPushATodos(alarmaData);
-  }
-
-  // 4. Enviar WhatsApp (con cola offline)
-  var tipoCapturado = alarmTipoSeleccionado; // capturar ANTES de cerrarAlarma
-  var msg = '🚨 *ALERTA DE EMERGENCIA*\n━━━━━━━━━━━━━━━━━━\n'
-    +'⚠️ Tipo: *'+tipoCapturado+'*\n'
-    +'👷 Reportado por: '+quien+'\n'
-    +(lugar ? 'Ubicacion: '+lugar+'\n' : '')
-    +'📅 '+fechaStr+' · 🕐 '+horaStr+'\n'
-    +'━━━━━━━━━━━━━━━━━━\n'
-    +'_Campo Cuichapa · Lifting de Mexico_';
-
-  function intentarEnviarAlarmaWA(){
-    return fetch(UM_BASE+'/messages/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:'token='+encodeURIComponent(UM_TOKEN)+'&to='+encodeURIComponent(UM_TO)+'&body='+encodeURIComponent(msg)
-    }).then(function(r){ return r.json(); })
-    .then(function(d){
-      if(d && (d.sent==='true'||d.sent===true)){
-        // Marcar como enviado
-        var arr2 = getAlarmasLocales();
-        for(var i=0;i<arr2.length;i++){ if(arr2[i].id===alarmaData.id){ arr2[i].estado='enviado'; break; } }
-        saveAlarmasLocales(arr2);
-        actualizarEstadoReporte(alarmaData.id, 'enviado', new Date().toISOString());
-        renderHistorial();
-      }
-    }).catch(function(){});
-  }
-
-  // Capturar tipo ANTES de cerrar (cerrarAlarma limpia variables)
   var tipoCapturado = alarmTipoSeleccionado;
 
-  // Cerrar modal y limpiar PRIMERO
-  cerrarAlarma();
+  function _doSend(lugar){
+    var nFotos = fotosAlarma.length;
+    var alarmaData = {
+      id:       ahora.getTime(),
+      tipo:     tipoCapturado,
+      quien:    quien,
+      lugar:    lugar,
+      fecha:    ahora.toISOString(),
+      hora:     horaStr,
+      estado:   'pendiente',
+      esAlarma: true
+    };
 
-  // Luego enviar (tipo ya está capturado en tipoCapturado)
-  showToast('🚨 ALARMA ENVIADA: '+tipoCapturado);
-  tocarSonidoAlarma();
-  if(navigator.vibrate) navigator.vibrate([400,100,400,100,600,100,400]);
-
-  if(navigator.onLine){
-    enviarConUltramsg(alarmaData.id, function(ok){
-      if(!ok) showToast('⚠️ Sin señal · Alarma guardada · Se enviará cuando haya señal');
-      limpiarFotosPostAlarma();
+    // Guardar local + historial
+    var arr = getAlarmasLocales(); arr.unshift(alarmaData); saveAlarmasLocales(arr);
+    var fotosCopy = fotosAlarma.slice();
+    guardarReporte({
+      id:           alarmaData.id,
+      fecha:        alarmaData.fecha,
+      pozo:         lugar,
+      recorredor:   quien,
+      msg:          '🚨 *ALERTA: '+tipoCapturado+'*\n📍 '+(lugar||'—')+'\n👷 '+quien+'\n🕐 '+horaStr+(nFotos?'\n📸 Evidencia: '+nFotos+' foto'+(nFotos===1?'':'s'):''),
+      fotos:        fotosCopy,
+      estado:       'pendiente',
+      ultimoIntento:null,
+      intentos:     0,
+      esAlarma:     true,
+      tipoAlarma:   tipoCapturado
     });
-  } else {
-    showToast('⚠️ Sin señal · Alarma guardada · Se enviará cuando haya señal');
-    limpiarFotosPostAlarma();
+    _alarmLastReporteId = alarmaData.id;
+
+    // Firebase push
+    if(fbDB){ fbDB.ref('alarmas/'+alarmaData.id).set(alarmaData).catch(function(){}); enviarPushATodos(alarmaData); }
+
+    // Construir mensaje WA
+    var msgLines = ['🚨 *ALERTA DE EMERGENCIA*','━━━━━━━━━━━━━━━━━━',
+      '⚠️ Tipo: *'+tipoCapturado+'*',
+      '👷 Reportado por: '+quien];
+    if(esRecorredor && lugar) msgLines.push('📍 Ubicación: '+lugar);
+    if(!esRecorredor && lugar) msgLines.push('📍 Lugar: '+lugar);
+    msgLines.push('📅 '+fechaStr+' · 🕐 '+horaStr);
+    msgLines.push('━━━━━━━━━━━━━━━━━━');
+    msgLines.push('_Campo Cuichapa · Lifting de Mexico_');
+    var msg = msgLines.join('\n');
+
+    // Limpiar fotos de alarma y cerrar
+    fotosAlarma = [];
+    document.getElementById('alarmFotoGrid').innerHTML = '';
+    document.getElementById('alarmFotoCountNew').textContent = '';
+    var sb = document.getElementById('alarmSendBtn');
+    if(sb){ sb.disabled=true; sb.style.opacity='.45'; sb.style.pointerEvents='none'; }
+    document.querySelectorAll('#alarmaOpciones .alarm-opt').forEach(function(b){ b.classList.remove('selected'); });
+    alarmTipoSeleccionado = '';
+
+    // Mostrar tarjetas de confirmación
+    var cc = document.getElementById('alarmConfirmCards');
+    if(cc){ cc.style.display = 'block'; setTimeout(function(){ cc.scrollIntoView({behavior:'smooth',block:'center'}); },200); }
+
+    showToast('🚨 ALARMA ENVIADA: '+tipoCapturado);
+    tocarSonidoAlarma();
+    if(navigator.vibrate) navigator.vibrate([400,100,400,100,600,100,400]);
+
+    if(navigator.onLine){
+      _alarmCcSet('Msg','⏳','Enviando alerta al grupo...');
+      _alarmCcSet('Foto','⏳', nFotos>0?'Enviando '+nFotos+' foto'+(nFotos>1?'s':'')+'...':'Sin fotos adjuntas');
+      enviarConUltramsg(alarmaData.id, function(ok){
+        actualizarBadgeHistorial();
+        if(ok){
+          _alarmCcSet('Msg','✅','Enviado correctamente al grupo');
+          var nF2 = nFotos;
+          _alarmCcSet('Foto', nF2>0?'✅':'📷', nF2>0?nF2+' foto'+(nF2>1?'s':'')+' enviada'+(nF2>1?'s':''):' Sin fotos adjuntas');
+        } else {
+          _alarmCcSet('Msg','⚠️','Sin respuesta — verifica tu señal');
+          _alarmCcSet('Foto','⚠️','Pendiente de reenvío');
+          showToast('⚠️ Sin señal · Alarma guardada · Se enviará al recuperar señal');
+        }
+        limpiarFotosPostAlarma();
+      });
+    } else {
+      _alarmCcSet('Msg','💾','Guardado localmente — se enviará al recuperar señal');
+      _alarmCcSet('Foto','💾', nFotos>0?nFotos+' foto'+(nFotos>1?'s':'')+' guardada'+(nFotos>1?'s':''):' Sin fotos adjuntas');
+      showToast('⚠️ Sin señal · Alarma guardada · Se enviará cuando haya señal');
+      limpiarFotosPostAlarma();
+      window.addEventListener('online', function retryOnline(){
+        var todos = typeof getReportes==='function'?getReportes():[];
+        todos.filter(function(r){return r.estado==='pendiente';}).forEach(function(r,i){
+          setTimeout(function(){ enviarConUltramsg(r.id, function(){ actualizarBadgeHistorial(); renderHistorial(); }); }, i*1500);
+        });
+      });
+    }
   }
 
-  // Reintentar cuando vuelva señal
-  window.addEventListener('online', function retryOnline(){
-    var todos = typeof getReportes === 'function' ? getReportes() : [];
-    var pendientes = todos.filter(function(r){ return r.estado==='pendiente'; });
-    pendientes.forEach(function(r, i){
-      setTimeout(function(){
-        enviarConUltramsg(r.id, function(){ actualizarBadgeHistorial(); renderHistorial(); });
-      }, i * 1500); // stagger to avoid rate limiting
-    });
+  // Si es recorredor: GPS automático
+  if(esRecorredor){
+    if(la!==0&&lo!==0){
+      var lugar = la.toFixed(6)+','+lo.toFixed(6)+'\nhttps://maps.google.com/?q='+la+','+lo;
+      _doSend(lugar);
+    } else if(navigator.geolocation){
+      showToast('📍 Obteniendo ubicación...');
+      var gpsTimeout = setTimeout(function(){
+        var lugar = W&&W!=='???' ? 'Pozo C-'+W+' (sin GPS)' : 'Campo Cuichapa (sin GPS)';
+        _doSend(lugar);
+      }, 5000);
+      navigator.geolocation.getCurrentPosition(
+        function(p){
+          clearTimeout(gpsTimeout);
+          la=p.coords.latitude; lo=p.coords.longitude; ac=Math.round(p.coords.accuracy);
+          var lugar = la.toFixed(6)+','+lo.toFixed(6)+'\nhttps://maps.google.com/?q='+la+','+lo;
+          _doSend(lugar);
+        },
+        function(){ clearTimeout(gpsTimeout); _doSend(W&&W!=='???'?'Pozo C-'+W+' (sin GPS)':'Campo Cuichapa (sin GPS)'); },
+        {enableHighAccuracy:true, timeout:5000, maximumAge:0}
+      );
+    } else { _doSend('Campo Cuichapa'); }
+  } else {
+    // No recorredor: usar campo de texto
+    var lugText = (document.getElementById('alarmLocInput').value||'').trim() || 'No especificado';
+    _doSend(lugText);
+  }
+}
+
+function limpiarFotosPostAlarma(){
+  try{ renderFotos(); }catch(e){}
+  var fg=document.getElementById('fotoGrid'); if(fg) fg.innerHTML='';
+  var fc=document.getElementById('fotoCount'); if(fc) fc.textContent='';
+  var fi1=document.getElementById('fotoInputCam'),fi2=document.getElementById('fotoInputGal');
+  if(fi1) fi1.value=''; if(fi2) fi2.value='';
+}
+
+
+// ══════════════════════════════════════════════════
+// ══  HISTORIAL CENTRAL  ═══════════════════════════
+// ══════════════════════════════════════════════════
+
+var HC_FILTRO = 'todos';
+
+// Auto-limpieza: borrar reportes mayores a 7 días
+function hcAutoLimpiar(){
+  var arr = getHistorial();
+  var hace7 = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  var filtrado = arr.filter(function(r){ return new Date(r.fecha).getTime() > hace7; });
+  if(filtrado.length < arr.length){
+    saveHistorial(filtrado);
+    console.log('Historial Central: ' + (arr.length - filtrado.length) + ' reportes eliminados (>7 días)');
+  }
+}
+
+// Detectar tipo de reporte
+function hcTipoReporte(r){
+  if(r.esAlarma) return 'alarma';
+  if(r.modo === 'guardia') return 'guardia';
+  if(r.modo === 'cab') return 'cabezal';
+  if(r.modo === 'estacion') return 'estacion';
+  if(!r.msg) return 'co';
+  var m = r.msg;
+  if(m.indexOf('NIVELES DE GUARDIA') !== -1 || m.indexOf('NIVEL NOCTURNO') !== -1) return 'guardia';
+  if(m.indexOf('CABEZAL') !== -1) return 'cabezal';
+  if(m.indexOf('ESTACIÓN') !== -1 || m.indexOf('ESTACION') !== -1) return 'estacion';
+  return 'co';
+}
+
+function hcFiltrar(filtro){
+  HC_FILTRO = filtro;
+  // Actualizar botones
+  ['todos','co','guardia','cabezal','estacion','alarma'].forEach(function(f){
+    var btn = document.getElementById('hcf-'+f);
+    if(!btn) return;
+    if(f === filtro){
+      btn.style.background = 'var(--accent)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--accent)';
+    } else {
+      btn.style.background = 'var(--surface2)'; btn.style.color = 'var(--txt2)'; btn.style.borderColor = 'var(--border)';
+    }
+  });
+  renderHistCentral();
+}
+
+var HC_TIPO_LABELS = {
+  co: {icon:'🛢', label:'C.O.', color:'#3b82f6'},
+  guardia: {icon:'🌙', label:'Nivel Nocturno', color:'#8b5cf6'},
+  cabezal: {icon:'🔧', label:'Cabezal', color:'#f59e0b'},
+  estacion: {icon:'🏭', label:'Estación', color:'#10b981'},
+  alarma: {icon:'🚨', label:'Alarma', color:'#dc2626'},
+};
+
+function renderHistCentral(){
+  hcAutoLimpiar();
+  var arr = getHistorial();
+  // Filtrar
+  if(HC_FILTRO !== 'todos'){
+    arr = arr.filter(function(r){ return hcTipoReporte(r) === HC_FILTRO; });
+  }
+  // Ordenar más reciente primero
+  arr = arr.slice().sort(function(a,b){ return new Date(b.fecha) - new Date(a.fecha); });
+
+  var list = document.getElementById('hcList');
+  var countEl = document.getElementById('hcCount');
+  if(!list) return;
+  if(countEl) countEl.textContent = arr.length + ' reporte' + (arr.length !== 1 ? 's' : '');
+
+  if(!arr.length){
+    list.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--txt2)">📭 Sin reportes' + (HC_FILTRO !== 'todos' ? ' de este tipo' : '') + '</div>';
+    return;
+  }
+
+  list.innerHTML = arr.map(function(r){
+    var tipo = hcTipoReporte(r);
+    var t = HC_TIPO_LABELS[tipo] || HC_TIPO_LABELS.co;
+    var fecha = new Date(r.fecha);
+    var fechaStr = fecha.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})
+      +' '+fecha.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    var estadoBg = r.estado === 'enviado' ? '#16a34a' : '#f59e0b';
+    var estadoTxt = r.estado === 'enviado' ? '✓' : '⏳';
+    return '<div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<div style="font-size:22px">'+t.icon+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:800;font-size:14px;color:var(--txt)">'+(r.esAlarma ? (r.tipoAlarma||'Alarma') : 'C-'+r.pozo)+'</div>'
+      +'<div style="font-size:11px;color:var(--txt2);margin-top:1px">'+r.recorredor+' · '+fechaStr+'</div>'
+      +'</div>'
+      +'<span style="background:'+t.color+';color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:10px;flex-shrink:0">'+t.label+'</span>'
+      +'<span style="background:'+estadoBg+';color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">'+estadoTxt+'</span>'
+      +'</div>'
+      +(r.msg ? '<div style="font-size:11px;color:var(--txt2);white-space:pre-wrap;max-height:80px;overflow:hidden;line-height:1.5">'+escapeHTML(r.msg.substring(0,200))+(r.msg.length>200?'…':'')+'</div>' : '')
+      +'</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// ══  SUPERINTENDENTE CENTRAL  ═════════════════════
+// ══════════════════════════════════════════════════
+
+var REC_STATUS_KEY = 'cuichapa_rec_status';
+
+function getRecStatus(){
+  try{ return JSON.parse(localStorage.getItem(REC_STATUS_KEY)||'{}'); }catch(e){ return {}; }
+}
+function saveRecStatus(obj){
+  try{ localStorage.setItem(REC_STATUS_KEY, JSON.stringify(obj)); }catch(e){}
+}
+
+function toggleRecStatus(nombre){
+  var status = getRecStatus();
+  status[nombre] = status[nombre] === 'baja' ? 'activo' : 'baja';
+  saveRecStatus(status);
+  renderSuperCentral();
+  showToast((status[nombre] === 'activo' ? '✅ ' : '⛔ ') + nombre + ' → ' + (status[nombre] === 'activo' ? 'Activo' : 'Dado de baja'));
+}
+
+var _blsChartInstance = null;
+
+function renderSuperCentral(){
+  renderRecList();
+  renderBlsChart();
+}
+
+function renderRecList(){
+  var RECS_FULL = [
+    {key:'Manrique', label:'Manrique', theme:'m', emoji:'👷'},
+    {key:'Cirilo',   label:'Cirilo',   theme:'c', emoji:'👷'},
+    {key:'Juan Carlos', label:'Juan Carlos', theme:'jc', emoji:'👷'},
+  ];
+  var status = getRecStatus();
+  var list = document.getElementById('recList');
+  if(!list) return;
+  list.innerHTML = RECS_FULL.map(function(r){
+    var activo = status[r.key] !== 'baja';
+    return '<div style="background:var(--surface2);border:1.5px solid '+(activo?'var(--border)':'#dc2626')+';border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px">'
+      +'<div style="font-size:28px">'+r.emoji+'</div>'
+      +'<div style="flex:1">'
+      +'<div style="font-weight:800;font-size:15px;color:var(--txt)">'+r.label+'</div>'
+      +'<div style="font-size:11px;margin-top:2px;font-weight:700;color:'+(activo?'#16a34a':'#dc2626')+'">'+( activo?'● Activo':'● Dado de baja')+'</div>'
+      +'</div>'
+      +'<button onclick="toggleRecStatus(\''+r.key+'\')" style="padding:8px 16px;border-radius:10px;border:1.5px solid '+(activo?'#dc2626':'#16a34a')+';background:transparent;color:'+(activo?'#dc2626':'#16a34a')+';font-size:13px;font-weight:800;cursor:pointer">'
+      +(activo?'Dar de baja':'Dar de alta')+'</button>'
+      +'</div>';
+  }).join('');
+}
+
+function renderBlsChart(){
+  var canvas = document.getElementById('blsChart');
+  if(!canvas) return;
+  // Destruir instancia anterior
+  if(_blsChartInstance){ try{ _blsChartInstance.destroy(); }catch(e){} _blsChartInstance = null; }
+
+  // Extraer datos de barriles de los últimos 14 días
+  var arr = getHistorial();
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var dias = [];
+  var etiquetas = [];
+  for(var d = 13; d >= 0; d--){
+    var dia = new Date(hoy); dia.setDate(hoy.getDate() - d);
+    dias.push(dia);
+    etiquetas.push(dia.getDate()+'/'+(dia.getMonth()+1));
+  }
+
+  // Agrupar barriles por día
+  var blsPorDia = {};
+  dias.forEach(function(d){ blsPorDia[d.toDateString()] = 0; });
+
+  arr.forEach(function(r){
+    if(!r.fecha || !r.msg) return;
+    var fecha = new Date(r.fecha); fecha.setHours(0,0,0,0);
+    var key = fecha.toDateString();
+    if(!(key in blsPorDia)) return;
+    // Buscar barriles en el mensaje: "BLS: XXX" o "Barriles: XXX"
+    var m = r.msg;
+    var matchBls = m.match(/(?:BLS|Barriles):\s*(\d+(?:\.\d+)?)/i);
+    if(matchBls){
+      var val = parseFloat(matchBls[1]);
+      if(!isNaN(val)) blsPorDia[key] = Math.max(blsPorDia[key], val);
+    }
+    // Nivel nocturno: "🛢 Barriles: XXX"
+    var matchNiv = m.match(/🛢 Barriles:\s*(\d+(?:\.\d+)?)/);
+    if(matchNiv){
+      var val2 = parseFloat(matchNiv[1]);
+      if(!isNaN(val2)) blsPorDia[key] = Math.max(blsPorDia[key], val2);
+    }
+  });
+
+  var datos = dias.map(function(d){ return blsPorDia[d.toDateString()] || 0; });
+  var maxVal = Math.max.apply(null, datos.concat([10]));
+
+  // Dibujar con Canvas API directamente (sin Chart.js externo)
+  var ctx = canvas.getContext('2d');
+  var W2 = canvas.offsetWidth || 320;
+  var H = 180;
+  canvas.width = W2; canvas.height = H;
+  var pad = {top:20, right:10, bottom:30, left:40};
+  var chartW = W2 - pad.left - pad.right;
+  var chartH = H - pad.top - pad.bottom;
+  var n = datos.length;
+  var stepX = chartW / (n - 1);
+
+  // Fondo
+  ctx.clearRect(0, 0, W2, H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(128,128,128,.15)';
+  ctx.lineWidth = 1;
+  for(var gi = 0; gi <= 4; gi++){
+    var gy = pad.top + (chartH / 4) * gi;
+    ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(pad.left + chartW, gy); ctx.stroke();
+    // Etiqueta Y
+    var yVal = Math.round(maxVal - (maxVal / 4) * gi);
+    ctx.fillStyle = 'rgba(128,128,128,.7)';
+    ctx.font = '10px Inter,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(yVal, pad.left - 4, gy + 4);
+  }
+
+  // Línea
+  ctx.beginPath();
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  datos.forEach(function(v, i){
+    var x = pad.left + i * stepX;
+    var y = pad.top + chartH - (v / maxVal) * chartH;
+    if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Área bajo la línea
+  ctx.beginPath();
+  datos.forEach(function(v, i){
+    var x = pad.left + i * stepX;
+    var y = pad.top + chartH - (v / maxVal) * chartH;
+    if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(pad.left + (n-1)*stepX, pad.top + chartH);
+  ctx.lineTo(pad.left, pad.top + chartH);
+  ctx.closePath();
+  var grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+  grad.addColorStop(0, 'rgba(245,158,11,.3)');
+  grad.addColorStop(1, 'rgba(245,158,11,.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Puntos + etiquetas X
+  datos.forEach(function(v, i){
+    var x = pad.left + i * stepX;
+    var y = pad.top + chartH - (v / maxVal) * chartH;
+    // Punto
+    ctx.beginPath();
+    ctx.arc(x, y, v > 0 ? 4 : 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = v > 0 ? '#f59e0b' : 'rgba(128,128,128,.4)';
+    ctx.fill();
+    // Valor encima
+    if(v > 0){
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(v, x, y - 8);
+    }
+    // Etiqueta X (cada 2 días)
+    if(i % 2 === 0 || i === n-1){
+      ctx.fillStyle = 'rgba(128,128,128,.7)';
+      ctx.font = '10px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(etiquetas[i], x, H - 6);
+    }
   });
 }
 
@@ -4600,7 +5076,8 @@ function confirmarEnvio(){
     fotos: fotos.map(function(f){ return {data:(f.data||f), nombre:(f.nombre||'')}; }),
     estado: 'pendiente',
     ultimoIntento: null,
-    intentos: 0
+    intentos: 0,
+    modo: modoRegistro || 'co'
   };
   // 1. SIEMPRE guardar primero — nunca perder
   guardarReporte(reporte);
@@ -5914,9 +6391,10 @@ var _UBI_L = [{"n":"LDD CUI216-CAB CUI191","c":[[17.93051,-94.30307],[17.93052,-
 function abrirUbiMapa(){
   var modal = document.getElementById('ubiModal');
   if(!modal) return;
+  var sidebar = document.querySelector('.sidebar');
+  if(sidebar) sidebar.style.display = 'none';
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
-  // Init map only once; re-open just shows modal
   if(!_ubiMap){
     setTimeout(_initUbiMap, 80);
   } else {
@@ -5928,6 +6406,8 @@ function cerrarUbiMapa(){
   var modal = document.getElementById('ubiModal');
   if(modal) modal.style.display = 'none';
   document.body.style.overflow = '';
+  var sidebar = document.querySelector('.sidebar');
+  if(sidebar) sidebar.style.display = '';
 }
 
 var _ubiUserLat = null;
