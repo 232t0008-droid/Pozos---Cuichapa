@@ -1175,6 +1175,18 @@ body.night .chk-row.on{background:#052e1640}
       <div class="pk-card" onclick="selProfile('Manrique','m','rec')"><div class="pk-card-ico">🌊</div><div class="pk-card-nm">Manrique</div><div class="pk-card-lk">🔒 clave</div></div>
       <div class="pk-card" onclick="selProfile('Cirilo','c','rec')"><div class="pk-card-ico">⛏️</div><div class="pk-card-nm">Cirilo</div><div class="pk-card-lk">🔒 clave</div></div>
       <div class="pk-card" onclick="selProfile('Juan Carlos','jc','rec')"><div class="pk-card-ico">🦺</div><div class="pk-card-nm">Juan Carlos</div><div class="pk-card-lk">🔒 clave</div></div>
+      <!-- Botón instalar para recorredores -->
+      <div id="recInstallWrap" style="grid-column:1/-1;margin-top:4px;display:none">
+        <button onclick="pwaInstalarRec()" style="width:100%;padding:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif">
+          📲 Instalar app en este teléfono
+        </button>
+        <div id="recInstallInstr" style="display:none;margin-top:10px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px;font-size:12px;color:#166534;line-height:1.7">
+          <strong>Cómo instalar en Android:</strong><br>
+          1. Toca los 3 puntos ⋮ arriba a la derecha<br>
+          2. Selecciona <strong>"Agregar a pantalla de inicio"</strong><br>
+          3. Confirma con <strong>"Agregar"</strong>
+        </div>
+      </div>
     </div>
 
     <!-- OPERADORES -->
@@ -1242,6 +1254,39 @@ function ppToggle(id){
   var row=body.previousElementSibling;
   body.classList.add('open');
   if(row)row.classList.add('open');
+  // Mostrar botón instalar solo en recorredores y si no está instalada
+  if(id === 'rec'){
+    var wrap = document.getElementById('recInstallWrap');
+    if(wrap && !window.matchMedia('(display-mode: standalone)').matches){
+      wrap.style.display = 'block';
+    }
+  }
+}
+
+function pwaInstalarRec(){
+  if(window.deferredPrompt){
+    window.deferredPrompt.prompt();
+    window.deferredPrompt.userChoice.then(function(r){
+      window.deferredPrompt = null;
+      if(r.outcome === 'accepted'){
+        var wrap = document.getElementById('recInstallWrap');
+        if(wrap) wrap.style.display = 'none';
+        showToast('✅ App instalada correctamente');
+      }
+    });
+  } else {
+    // Mostrar instrucciones manuales para Android/Chrome
+    var instr = document.getElementById('recInstallInstr');
+    if(instr) instr.style.display = instr.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function pwaVerificarInstalacion(){
+  if(window.deferredPrompt){
+    instalarPWA();
+  } else if(!window.matchMedia('(display-mode: standalone)').matches){
+    showToast('Abre el menú ⋮ del navegador y elige "Agregar a pantalla de inicio"');
+  }
 }
 </script>
 
@@ -3817,14 +3862,10 @@ function selAlarm(btn, tipo){
 
 function confirmarAlarma(){
   if(!alarmTipoSeleccionado) return;
-  // Mostrar confirmación inline
-  document.getElementById('alarmConfirmOverlay').classList.add('open');
-  document.getElementById('alarmConfirmType').textContent = alarmTipoSeleccionado;
+  enviarAlarma();
 }
 
-function cancelarConfirmAlarma(){
-  document.getElementById('alarmConfirmOverlay').classList.remove('open');
-}
+function cancelarConfirmAlarma(){ }
 
 var _alarmLastReporteId = null;
 
@@ -3859,8 +3900,6 @@ function alarmCcVerificar(){
 }
 
 function enviarAlarma(){
-  document.getElementById('alarmConfirmOverlay').classList.remove('open');
-
   // Detectar quien reporta automáticamente
   var RECS = {'m':'Manrique','c':'Cirilo','jc':'Juan Carlos'};
   var RECS_SHORT = ['Manrique','Cirilo','Juan Carlos'];
