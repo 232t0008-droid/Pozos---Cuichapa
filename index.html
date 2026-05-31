@@ -19,15 +19,15 @@
     "theme_color": "#0f3460",
     "lang": "es",
     "icons": [
-      { "src": "https://via.placeholder.com/192x192/0f3460/FF7A00?text=CC", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-      { "src": "https://via.placeholder.com/512x512/0f3460/FF7A00?text=CC", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+      { "src": "https://produccion-cuichapa.github.io/Pozos---Cuichapa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+      { "src": "https://produccion-cuichapa.github.io/Pozos---Cuichapa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
     ],
     "categories": ["productivity", "utilities"],
     "prefer_related_applications": false
   };
-  var blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-  var url = URL.createObjectURL(blob);
-  document.getElementById('pwa-manifest').setAttribute('href', url);
+  var json = JSON.stringify(manifest);
+  var b64 = btoa(unescape(encodeURIComponent(json)));
+  document.getElementById('pwa-manifest').setAttribute('href', 'data:application/json;base64,' + b64);
 })();
 </script>
 <meta name="theme-color" content="#0f3460">
@@ -1333,6 +1333,33 @@ function pwaVerificarInstalacion(){
   </div>
   <button class="install-btn" id="installBtn" onclick="instalarPWA()">Instalar</button>
   <button class="install-close" onclick="cerrarBanner()">✕</button>
+</div>
+
+<!-- Pantalla de instalación para Android -->
+<div id="installScreen" style="display:none;position:fixed;inset:0;z-index:99999;background:#0f3460;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
+  <div style="font-size:64px;margin-bottom:16px">📲</div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:#fff;margin-bottom:8px">CAMPO CUICHAPA</div>
+  <div style="font-size:14px;color:rgba(255,255,255,.7);margin-bottom:32px">Instala la app para usarla sin internet</div>
+
+  <!-- Botón instalar (si Chrome tiene prompt) -->
+  <button id="installScreenBtn" onclick="installScreenInstall()" style="width:100%;max-width:320px;padding:18px;background:#f59e0b;color:#fff;border:none;border-radius:16px;font-size:16px;font-weight:900;font-family:'Inter',sans-serif;cursor:pointer;margin-bottom:16px;display:none">
+    ⬇️ Instalar app ahora
+  </button>
+
+  <!-- Instrucciones manuales Android -->
+  <div id="installManual" style="background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);border-radius:16px;padding:20px;max-width:320px;width:100%;text-align:left;margin-bottom:20px">
+    <div style="font-size:13px;font-weight:800;color:#f59e0b;margin-bottom:12px;text-align:center">CÓMO INSTALAR EN ANDROID</div>
+    <div style="font-size:13px;color:#fff;line-height:2">
+      <div>1️⃣ Toca los <strong>3 puntos ⋮</strong> arriba a la derecha</div>
+      <div>2️⃣ Selecciona <strong>"Agregar a pantalla de inicio"</strong></div>
+      <div>3️⃣ Toca <strong>"Agregar"</strong> para confirmar</div>
+      <div>4️⃣ Abre la app desde el ícono instalado</div>
+    </div>
+  </div>
+
+  <button onclick="installScreenSkip()" style="background:transparent;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.6);padding:10px 24px;border-radius:10px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif">
+    Continuar sin instalar
+  </button>
 </div>
 
 <!-- Selector de pozo -->
@@ -4525,6 +4552,14 @@ window.addEventListener('appinstalled', function(){
 // Mostrar permisos al entrar a la app
 window.addEventListener('load', function(){
   setTimeout(mostrarPermOverlay, 600);
+  // Mostrar pantalla instalación en Android si no está instalada
+  var isAndroid = /Android/i.test(navigator.userAgent);
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  var skipped = false;
+  try{ skipped = localStorage.getItem('install_skip')==='1'; }catch(e){}
+  if(isAndroid && !isStandalone && !skipped){
+    setTimeout(mostrarInstallScreen, 1800);
+  }
 });
 
 function initFirebase(){
@@ -5403,22 +5438,65 @@ if('serviceWorker' in navigator){
 
 // ══ INSTALL BANNER ══
 var deferredPrompt=null;
+// ── Pantalla de instalación ───────────────────────
+function mostrarInstallScreen(){
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if(isStandalone) return;
+  try{ if(localStorage.getItem('install_skip')==='1') return; }catch(e){}
+  var sc = document.getElementById('installScreen');
+  if(sc) sc.style.display = 'flex';
+}
+function installScreenInstall(){
+  if(window.deferredPrompt){
+    window.deferredPrompt.prompt();
+    window.deferredPrompt.userChoice.then(function(){
+      window.deferredPrompt = null;
+      var sc = document.getElementById('installScreen');
+      if(sc) sc.style.display = 'none';
+    });
+  }
+}
+function installScreenSkip(){
+  try{ localStorage.setItem('install_skip','1'); }catch(e){}
+  var sc = document.getElementById('installScreen');
+  if(sc) sc.style.display = 'none';
+}
 window.addEventListener('beforeinstallprompt',function(e){
-  e.preventDefault(); deferredPrompt=e;
+  e.preventDefault(); window.deferredPrompt = e;
+  var btn = document.getElementById('installScreenBtn');
+  var manual = document.getElementById('installManual');
+  if(btn) btn.style.display = 'block';
+  if(manual) manual.style.display = 'none';
   if(!window.matchMedia('(display-mode: standalone)').matches){
     var dismissed=false;
     try{dismissed=localStorage.getItem('pwa_dismissed')==='1';}catch(e2){}
     if(!dismissed) document.getElementById('installBanner').classList.add('show');
   }
 });
+window.addEventListener('appinstalled',function(){
+  window.deferredPrompt=null;
+  var sc=document.getElementById('installScreen'); if(sc) sc.style.display='none';
+  document.getElementById('installBanner').classList.remove('show');
+  showToast('\u2705 App instalada correctamente');
+});
 function instalarPWA(){
-  if(!deferredPrompt)return;
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.then(function(){deferredPrompt=null;cerrarBanner();});
+  if(!window.deferredPrompt)return;
+  window.deferredPrompt.prompt();
+  window.deferredPrompt.userChoice.then(function(){window.deferredPrompt=null;cerrarBanner();});
 }
 function cerrarBanner(){
   document.getElementById('installBanner').classList.remove('show');
   try{localStorage.setItem('pwa_dismissed','1');}catch(e){}
+}
+function pwaVerificarInstalacion(){ if(window.deferredPrompt){ instalarPWA(); } else { mostrarInstallScreen(); } }
+function pwaInstalarRec(){
+  if(window.deferredPrompt){
+    window.deferredPrompt.prompt();
+    window.deferredPrompt.userChoice.then(function(r){
+      window.deferredPrompt=null;
+      if(r.outcome==='accepted'){ var w=document.getElementById('recInstallWrap'); if(w) w.style.display='none'; }
+    });
+  } else { mostrarInstallScreen(); }
 }
 
 // ══ WELL PICKER — selección de pozo ══
